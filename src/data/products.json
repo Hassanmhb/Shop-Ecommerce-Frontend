@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "title": "T-shirt with Tape Details",
+    "image": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&q=80",
+    "price": 120,
+    "rating": 4.5,
+    "category": "new_arrival"
+  },
+  {
+    "id": 2,
+    "title": "Skinny Fit Jeans",
+    "image": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500&q=80",
+    "price": 240,
+    "originalPrice": 260,
+    "discount": 20,
+    "rating": 3.5,
+    "category": "new_arrival"
+  },
+  {
+    "id": 3,
+    "title": "Checkered Shirt",
+    "image": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&q=80",
+    "price": 180,
+    "rating": 4.5,
+    "category": "new_arrival"
+  },
+  {
+    "id": 4,
+    "title": "Sleeve Striped T-shirt",
+    "image": "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=500&q=80",
+    "price": 130,
+    "originalPrice": 160,
+    "discount": 30,
+    "rating": 4.5,
+    "category": "new_arrival"
+  },
+  {
+    "id": 5,
+    "title": "Vertical Striped Shirt",
+    "image": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&q=80",
+    "price": 212,
+    "originalPrice": 232,
+    "discount": 20,
+    "rating": 5.0,
+    "category": "top_selling"
+  },
+  {
+    "id": 6,
+    "title": "Courage Graphic T-shirt",
+    "image": "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=500&q=80",
+    "price": 145,
+    "rating": 4.0,
+    "category": "top_selling"
+  },
+  {
+    "id": 7,
+    "title": "Loose Fit Bermuda Shorts",
+    "image": "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&q=80",
+    "price": 80,
+    "rating": 3.0,
+    "category": "top_selling"
+  },
+  {
+    "id": 8,
+    "title": "Faded Skinny Jeans",
+    "image": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500&q=80",
+    "price": 210,
+    "rating": 4.5,
+    "category": "top_selling"
+  }
+]
