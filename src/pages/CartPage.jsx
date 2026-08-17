@@ -19,8 +19,8 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/common/Footer';
 import { ProductContext } from '../context/ProductContext';
 
-// Backend Server URL
-const API_BASE_URL = 'http://localhost:8000';
+// Live Vercel Backend URL
+const API_BASE_URL = 'https://shop-ecommerce-backend-pk6z857yf-hassanmhbs-projects.vercel.app';
 
 const CartPage = () => {
   const { cartItems, updateQuantity, removeFromCart } = useContext(ProductContext);

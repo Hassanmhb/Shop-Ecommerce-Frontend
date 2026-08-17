@@ -20,7 +20,8 @@ import ProductReviews from './ProductReviews';
 import ProductLikeCard from './ProductLikeCard';
 import Footer from '../common/Footer';
 
-const API_BASE = 'http://localhost:8000';
+// Live Vercel Backend URL
+const API_BASE = 'https://shop-ecommerce-backend-pk6z857yf-hassanmhbs-projects.vercel.app';
 
 const COLOR_OPTIONS = [
   { id: 'olive', value: '#4F533E' },
