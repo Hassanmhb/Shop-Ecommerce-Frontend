@@ -14,9 +14,10 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 
-import Navbar from '../components/layout/Navbar';
-import Footer from '../components/common/Footer';
-import { ProductContext } from '../context/ProductContext';
+import Navbar from "../layout/Navbar";
+import Footer from "../common/Footer";
+import { ProductContext } from "../../context/ProductContext";
+
 
 const API_BASE_URL = 'https://shop-ecommerce-backend-pk6z857yf-hassanmhbs-projects.vercel.app';
 const FALLBACK_IMAGE = 'https://placehold.co/400x400?text=No+Image';
