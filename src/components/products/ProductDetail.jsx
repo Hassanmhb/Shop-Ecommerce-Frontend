@@ -9,6 +9,7 @@ import {
   Chip,
   IconButton,
   Divider,
+  CircularProgress,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -20,6 +21,27 @@ import { ProductContext } from '../context/ProductContext';
 const API_BASE_URL = 'https://shop-ecommerce-backend-pk6z857yf-hassanmhbs-projects.vercel.app';
 const FALLBACK_IMAGE = 'https://placehold.co/400x400?text=No+Image';
 
+// Global Image Extractor Helper Function
+const getImageUrl = (imageSrc) => {
+  if (!imageSrc) return FALLBACK_IMAGE;
+
+  // Handles Cloudinary / Nested Objects from Backend
+  if (typeof imageSrc === 'object') {
+    imageSrc = imageSrc.url || imageSrc.secure_url || imageSrc.path || imageSrc[0] || '';
+  }
+
+  if (typeof imageSrc !== 'string' || !imageSrc.trim()) return FALLBACK_IMAGE;
+
+  // Direct External / Cloudinary Absolute URLs
+  if (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) {
+    return imageSrc;
+  }
+
+  // Local/Backend Relative Path
+  const cleanPath = imageSrc.startsWith('/') ? imageSrc : `/${imageSrc}`;
+  return `${API_BASE_URL}${cleanPath}`;
+};
+
 const ProductDetails = () => {
   const { id } = useParams();
   const { products, addToCart } = useContext(ProductContext);
@@ -30,41 +52,24 @@ const ProductDetails = () => {
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
 
-  // Helper Function for Image Processing
-  const getImageUrl = (imageSrc) => {
-    if (!imageSrc) return FALLBACK_IMAGE;
-
-    if (typeof imageSrc === 'object') {
-      imageSrc = imageSrc.url || imageSrc.secure_url || imageSrc.path || '';
-    }
-
-    if (typeof imageSrc !== 'string' || !imageSrc.trim()) {
-      return FALLBACK_IMAGE;
-    }
-
-    if (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) {
-      return imageSrc;
-    }
-
-    const cleanPath = imageSrc.startsWith('/') ? imageSrc : `/${imageSrc}`;
-    return `${API_BASE_URL}${cleanPath}`;
-  };
-
   useEffect(() => {
     if (products && products.length > 0) {
-      const foundProduct = products.find((p) => (p.id || p._id).toString() === id.toString());
+      // Flexible matching for numeric ID or MongoDB _id string
+      const foundProduct = products.find(
+        (p) => (p._id || p.id)?.toString() === id?.toString()
+      );
+
       if (foundProduct) {
         setProduct(foundProduct);
 
-        // Normalize images array
-        const imagesArr = Array.isArray(foundProduct.images) && foundProduct.images.length > 0
-          ? foundProduct.images
-          : foundProduct.image
-          ? [foundProduct.image]
-          : [];
+        // Normalize images array safely
+        const rawImages = foundProduct.images || foundProduct.image || [];
+        const imagesArr = Array.isArray(rawImages) ? rawImages : [rawImages];
 
-        if (imagesArr.length > 0) {
-          setSelectedImage(imagesArr[0]);
+        if (imagesArr.length > 0 && imagesArr[0]) {
+          setSelectedImage(getImageUrl(imagesArr[0]));
+        } else {
+          setSelectedImage(FALLBACK_IMAGE);
         }
       }
     }
@@ -72,24 +77,23 @@ const ProductDetails = () => {
 
   if (!product) {
     return (
-      <Box sx={{ backgroundColor: '#FFFFFF', minHeight: '100vh' }}>
+      <Box sx={{ backgroundColor: '#FFFFFF', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <Navbar />
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-          <Typography variant="h5">Loading product details...</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 12 }}>
+          <CircularProgress color="inherit" />
         </Box>
         <Footer />
       </Box>
     );
   }
 
-  const galleryImages = Array.isArray(product.images) && product.images.length > 0
-    ? product.images
-    : product.image
-    ? [product.image]
-    : [FALLBACK_IMAGE];
+  // Parse Gallery List
+  const rawGallery = product.images || product.image || [];
+  const galleryList = Array.isArray(rawGallery) ? rawGallery : [rawGallery];
+  const finalGallery = galleryList.length > 0 ? galleryList : [FALLBACK_IMAGE];
 
   return (
-    <Box sx={{ backgroundColor: '#FFFFFF', minHeight: '100vh', width: '100%' }}>
+    <Box sx={{ backgroundColor: '#FFFFFF', minHeight: '100vh', width: '100%', overflowX: 'hidden' }}>
       <Navbar />
       <Box sx={{ maxWidth: '1240px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 2, md: 4 } }}>
         <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.6)', mb: 3 }}>
@@ -97,44 +101,48 @@ const ProductDetails = () => {
         </Typography>
 
         <Grid container spacing={4}>
-          {/* Image Gallery Section */}
+          {/* Images Section */}
           <Grid item xs={12} md={6}>
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 2 }}>
               {/* Thumbnails */}
               <Box sx={{ display: 'flex', flexDirection: { xs: 'row', sm: 'column' }, gap: 1.5, overflowX: 'auto' }}>
-                {galleryImages.map((img, index) => (
-                  <Box
-                    key={index}
-                    onClick={() => setSelectedImage(img)}
-                    sx={{
-                      width: { xs: 70, sm: 90 },
-                      height: { xs: 70, sm: 90 },
-                      borderRadius: '16px',
-                      backgroundColor: '#F0EEED',
-                      cursor: 'pointer',
-                      border: selectedImage === img ? '2px solid #000' : '1px solid transparent',
-                      overflow: 'hidden',
-                      p: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
+                {finalGallery.map((imgItem, index) => {
+                  const parsedUrl = getImageUrl(imgItem);
+                  return (
                     <Box
-                      component="img"
-                      src={getImageUrl(img)}
-                      alt="thumbnail"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = FALLBACK_IMAGE;
+                      key={index}
+                      onClick={() => setSelectedImage(parsedUrl)}
+                      sx={{
+                        width: { xs: 70, sm: 90 },
+                        height: { xs: 70, sm: 90 },
+                        borderRadius: '16px',
+                        backgroundColor: '#F0EEED',
+                        cursor: 'pointer',
+                        border: selectedImage === parsedUrl ? '2px solid #000' : '1px solid transparent',
+                        overflow: 'hidden',
+                        p: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
                       }}
-                      sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                    />
-                  </Box>
-                ))}
+                    >
+                      <Box
+                        component="img"
+                        src={parsedUrl}
+                        alt="thumbnail"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = FALLBACK_IMAGE;
+                        }}
+                        sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                      />
+                    </Box>
+                  );
+                })}
               </Box>
 
-              {/* Main Image */}
+              {/* Main Image Box */}
               <Box
                 sx={{
                   flex: 1,
@@ -150,8 +158,8 @@ const ProductDetails = () => {
               >
                 <Box
                   component="img"
-                  src={getImageUrl(selectedImage)}
-                  alt={product.title || product.name}
+                  src={selectedImage || FALLBACK_IMAGE}
+                  alt={product.title || product.name || 'Product Image'}
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = FALLBACK_IMAGE;
@@ -162,7 +170,7 @@ const ProductDetails = () => {
             </Box>
           </Grid>
 
-          {/* Product Details Section */}
+          {/* Product Info Section */}
           <Grid item xs={12} md={6}>
             <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, fontSize: { xs: '24px', sm: '32px' } }}>
               {product.title || product.name}
@@ -190,7 +198,7 @@ const ProductDetails = () => {
             </Box>
 
             <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.6)', mb: 3, lineHeight: 1.6 }}>
-              {product.description || 'This item is crafted from premium quality fabric for superior daily comfort.'}
+              {product.description || 'This graphic t-shirt is perfect for any occasion. Crafted from a soft and breathable fabric, it offers superior comfort and style.'}
             </Typography>
 
             <Divider sx={{ my: 2 }} />
