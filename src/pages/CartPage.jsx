@@ -19,7 +19,7 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/common/Footer';
 import { ProductContext } from '../context/ProductContext';
 
-// Live Vercel Backend URL
+// Backend Server Base URL
 const API_BASE_URL = 'https://shop-ecommerce-backend-pk6z857yf-hassanmhbs-projects.vercel.app';
 
 const CartPage = () => {
@@ -32,12 +32,25 @@ const CartPage = () => {
   const deliveryFee = subtotal > 0 ? 15 : 0;
   const total = subtotal - discountAmount + deliveryFee;
 
-  // Image URL Helper Function
+  // Enhanced Image URL Helper Function
   const getImageUrl = (imageSrc) => {
-    if (!imageSrc) return 'https://via.placeholder.com/150';
+    if (!imageSrc) return 'https://via.placeholder.com/150?text=No+Image';
+
+    // Cloudinary Object / Nested Object handle karne ke liye
+    if (typeof imageSrc === 'object') {
+      imageSrc = imageSrc.url || imageSrc.secure_url || imageSrc.path || '';
+    }
+
+    if (typeof imageSrc !== 'string' || !imageSrc.trim()) {
+      return 'https://via.placeholder.com/150?text=No+Image';
+    }
+
+    // Direct Cloudinary / HTTP External Links Check
     if (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) {
       return imageSrc;
     }
+
+    // Relative Path Check for Local/Backend uploads
     const cleanPath = imageSrc.startsWith('/') ? imageSrc : `/${imageSrc}`;
     return `${API_BASE_URL}${cleanPath}`;
   };
@@ -77,7 +90,7 @@ const CartPage = () => {
                 boxSizing: 'border-box',
               }}
             >
-              {cartItems.length === 0 ? (
+              {!cartItems || cartItems.length === 0 ? (
                 <Typography align="center" sx={{ py: 6, color: 'text.secondary', fontWeight: 500 }}>
                   Your cart is empty
                 </Typography>
@@ -106,10 +119,10 @@ const CartPage = () => {
                           <Box
                             component="img"
                             src={getImageUrl(itemImg)}
-                            alt={item.title || item.name}
+                            alt={item.title || item.name || 'Product'}
                             onError={(e) => {
                               e.target.onerror = null;
-                              e.target.src = 'https://via.placeholder.com/150';
+                              e.target.src = 'https://via.placeholder.com/150?text=No+Image';
                             }}
                             sx={{
                               width: '100%',
