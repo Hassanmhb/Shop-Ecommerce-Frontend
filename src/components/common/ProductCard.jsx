@@ -6,31 +6,21 @@ const ProductCard = ({ product }) => {
   const navigate = useNavigate();
   const BACKEND_URL = 'http://localhost:8000';
 
-  const normalizedProduct = product || {};
-  const productName = normalizedProduct.name || normalizedProduct.title || 'Product';
-  const productRating = Number(normalizedProduct.rating ?? 0);
-  const productPrice = normalizedProduct.price ?? 0;
-  const originalPrice = normalizedProduct.originalPrice ?? normalizedProduct.compareAtPrice ?? null;
-  const discountPercent = normalizedProduct.discountPercent ?? normalizedProduct.discount ?? 0;
-
-  const rawImagePath = Array.isArray(normalizedProduct.images) && normalizedProduct.images.length > 0
-    ? normalizedProduct.images[0]
-    : normalizedProduct.image || normalizedProduct.img || '';
+  const rawImagePath = Array.isArray(product?.images) && product.images.length > 0
+    ? product.images[0]
+    : product?.image || '';
 
   const getImageUrl = (path) => {
     if (!path) return 'https://via.placeholder.com/300?text=No+Image';
-
-    const imagePath = String(path).trim();
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return imagePath;
-    if (imagePath.startsWith('//')) return `https:${imagePath}`;
-
-    const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
     return encodeURI(`${BACKEND_URL}${cleanPath}`);
   };
 
   // Card par click handler
   const handleCardClick = () => {
-    const productId = normalizedProduct._id || normalizedProduct.id;
+    const productId = product?._id || product?.id;
     if (productId) {
       navigate(`/product/${productId}`);
     }
@@ -93,34 +83,34 @@ const ProductCard = ({ product }) => {
           }} 
           noWrap
         >
-          {productName}
+          {product?.name}
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, mb: 0.5 }}>
           <Rating 
-            value={productRating} 
+            value={Number(product?.rating) || 0} 
             precision={0.5} 
             size="small" 
             readOnly 
             sx={{ fontSize: { xs: '12px', sm: '16px' } }}
           />
           <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '10px', sm: '12px' }, fontWeight: 600 }}>
-            {productRating}/5
+            {product?.rating || 0}/5
           </Typography>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, flexWrap: 'wrap' }}>
           <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: '14px', sm: '18px', md: '20px' } }}>
-            ${productPrice}
+            ${product?.price}
           </Typography>
 
-          {originalPrice && originalPrice > productPrice && (
+          {product?.originalPrice && product?.originalPrice > product?.price && (
             <Typography variant="body2" sx={{ color: 'text.secondary', textDecoration: 'line-through', fontWeight: 600, fontSize: { xs: '11px', sm: '14px' } }}>
-              ${originalPrice}
+              ${product?.originalPrice}
             </Typography>
           )}
 
-          {discountPercent > 0 && (
+          {product?.discountPercent > 0 && (
             <Box 
               sx={{ 
                 backgroundColor: 'rgba(255, 51, 51, 0.1)', 
@@ -132,7 +122,7 @@ const ProductCard = ({ product }) => {
                 fontWeight: 700 
               }}
             >
-              -{discountPercent}%
+              -{product?.discountPercent}%
             </Box>
           )}
         </Box>

@@ -2,10 +2,9 @@ import React, { useContext } from 'react';
 import { Box, Typography, Button, Container, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { ProductContext } from '../../context/ProductContext';
-import ProductCard from '../common/ProductCard';
+import ProductCard from '../common/ProductCard'; // Updated to ProductCard
 
-// Live Vercel Backend URL
-const API_BASE = 'https://shop-ecommerce-backend-pk6z857yf-hassanmhbs-projects.vercel.app';
+const API_BASE = 'http://localhost:8000';
 
 const NewArrivals = () => {
   const { products, loading } = useContext(ProductContext);
@@ -65,6 +64,7 @@ const NewArrivals = () => {
             px: { xs: 0.5, md: 0 },
             justifyContent: { xs: 'flex-start', md: 'center' },
             scrollSnapType: { xs: 'x mandatory', md: 'none' },
+            // Hide Scrollbar
             '&::-webkit-scrollbar': { display: 'none' },
             msOverflowStyle: 'none',
             scrollbarWidth: 'none',
@@ -79,13 +79,8 @@ const NewArrivals = () => {
             const normalizedProduct = {
               ...product,
               id: productId,
-              name: product.name || product.title,
               title: product.title || product.name,
               image: getFullImageUrl(rawImg),
-              rating: product.rating ?? 0,
-              price: product.price ?? 0,
-              originalPrice: product.originalPrice ?? product.compareAtPrice ?? null,
-              discountPercent: product.discountPercent ?? product.discount ?? 0,
             };
 
             return (

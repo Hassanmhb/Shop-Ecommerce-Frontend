@@ -4,8 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ProductContext } from '../../context/ProductContext';
 import ProductCard from '../common/ProductCard';
 
-// Live Vercel Backend URL
-const API_BASE = 'https://shop-ecommerce-backend-pk6z857yf-hassanmhbs-projects.vercel.app';
+const API_BASE = 'http://localhost:8000';
 
 const ProductListSection = () => {
   const context = useContext(ProductContext);
@@ -68,13 +67,8 @@ const ProductListSection = () => {
             const normalizedProduct = {
               ...product,
               id: productId,
-              name: product.name || product.title,
               title: product.title || product.name,
               image: formattedImage,
-              rating: product.rating ?? 0,
-              price: product.price ?? 0,
-              originalPrice: product.originalPrice ?? product.compareAtPrice ?? null,
-              discountPercent: product.discountPercent ?? product.discount ?? 0,
             };
 
             return (
