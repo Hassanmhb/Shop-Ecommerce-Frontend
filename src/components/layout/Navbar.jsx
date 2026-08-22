@@ -20,14 +20,12 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import CloseIcon from '@mui/icons-material/Close';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-// ProductContext import kiya gaya hai
 import { ProductContext } from '../../context/ProductContext';
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  // Context se totalCartCount variable extract kiya gaya
   const { totalCartCount } = useContext(ProductContext);
 
   const navigate = useNavigate();
@@ -76,7 +74,7 @@ const Navbar = () => {
         position: 'relative',
         display: 'flex',
         alignItems: 'center',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         px: { xs: 2, sm: 4, md: 6, lg: 8 },
         py: 2,
         backgroundColor: '#FFFFFF',
@@ -118,7 +116,7 @@ const Navbar = () => {
         sx={{
           display: { xs: 'none', md: 'flex' },
           alignItems: 'center',
-          gap: { md: 2.5, lg: 3 },
+          gap: { md: 2.5, lg: 3.5 },
           whiteSpace: 'nowrap',
         }}
       >
@@ -127,12 +125,25 @@ const Navbar = () => {
             key={item.label}
             onClick={() => handleNavClick(item)}
             sx={{
+              position: 'relative',
               display: 'flex',
               alignItems: 'center',
               cursor: 'pointer',
               color: '#000000',
-              transition: 'opacity 0.2s',
-              '&:hover': { opacity: 0.7 },
+              py: 0.5,
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                width: '0%',
+                height: '2px',
+                bottom: 0,
+                left: 0,
+                backgroundColor: '#000000',
+                transition: 'width 0.3s ease-in-out',
+              },
+              '&:hover::after': {
+                width: '100%',
+              },
             }}
           >
             <Typography sx={{ fontWeight: 400, fontSize: { md: '14px', lg: '16px' } }}>

@@ -9,6 +9,12 @@ import ProductDetail from './components/products/ProductDetail';
 import BrowseByStyle from './components/common/BrowseByStyle';
 import CategoryPage from './pages/CategoryPage';
 import CartPage from '/src/pages/CartPage'
+import CheckoutPage from './pages/CheckoutPage';
+
+
+
+
+// Inside <Routes>
 
 function App() {
   return (
@@ -35,7 +41,15 @@ function App() {
 <Route path="/category" element={<CategoryPage/>}></Route>
 
 <Route path="/cart" element={<CartPage />} />
+
+
+
+<Route path="/checkout" element={<CheckoutPage/>} />
+
+
       </Routes>
+
+
     </div>
   );
 }
