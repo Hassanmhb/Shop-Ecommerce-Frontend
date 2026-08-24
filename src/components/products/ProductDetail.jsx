@@ -47,28 +47,53 @@ const ProductDetail = () => {
     setSelectedImageIndex(0);
     setQuantity(1);
 
-    if (products && products.length > 0) {
-      const foundProduct = products.find(
-        (item) => String(item.id || item._id) === String(id)
-      );
-      setProduct(foundProduct || null);
-      setLoading(false);
-    } else if (!contextLoading) {
-      setLoading(false);
+    const fetchSingleProduct = async () => {
+      // 1. Pehle context check karo
+      if (products && products.length > 0) {
+        const foundProduct = products.find(
+          (item) => String(item.id || item._id) === String(id)
+        );
+        if (foundProduct) {
+          setProduct(foundProduct);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 2. Agar context empty ho (direct link access), API se fetch karo
+      try {
+        setLoading(true);
+        const res = await fetch(`${API_BASE}/api/products/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setProduct(data.product || data);
+        } else {
+          setProduct(null);
+        }
+      } catch (err) {
+        console.error('Error fetching product detail:', err);
+        setProduct(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!contextLoading) {
+      fetchSingleProduct();
     }
   }, [id, products, contextLoading]);
 
-  // Updated image handler for Cloudinary CDN & local URLs
+  // Image URL Helper for Cloudinary, Base64 & Backend path
   const getBackendImageUrl = (imgPath) => {
     if (!imgPath) return 'https://placehold.co/400x400?text=No+Image';
 
-    let actualPath = typeof imgPath === 'object' ? imgPath.url : imgPath;
+    let actualPath = typeof imgPath === 'object' ? (imgPath.url || imgPath.secure_url) : imgPath;
 
     if (!actualPath || typeof actualPath !== 'string') {
       return 'https://placehold.co/400x400?text=No+Image';
     }
 
-    if (actualPath.startsWith('http://') || actualPath.startsWith('https://')) {
+    if (actualPath.startsWith('http://') || actualPath.startsWith('https://') || actualPath.startsWith('data:image')) {
       return encodeURI(actualPath);
     }
 
@@ -91,7 +116,7 @@ const ProductDetail = () => {
     return (
       <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <Navbar />
-        <Box sx={{ textAlign: 'center', py: 10, px: 2 }}>
+        <Box sx={{ textAlign: 'center', py: 10, px: 2, flex: 1 }}>
           <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
             Product not found!
           </Typography>
@@ -103,26 +128,23 @@ const ProductDetail = () => {
             Back to Home
           </Button>
         </Box>
+        <Footer />
       </Box>
     );
   }
 
-  // Extract from backend `images` array
-  const rawSingleImage =
-    Array.isArray(product.images) && product.images.length > 0
-      ? product.images[0]
-      : product.image || product.img;
+  // Extract from backend `images` array or fallback to single image
+  const rawImages = Array.isArray(product.images) && product.images.length > 0
+    ? product.images
+    : [product.image || product.img].filter(Boolean);
 
-  const rawImageList =
-    Array.isArray(product.images) && product.images.length > 0
-      ? product.images
-      : [rawSingleImage, rawSingleImage, rawSingleImage];
+  const rawImageList = rawImages.length > 0
+    ? rawImages
+    : ['https://placehold.co/400x400?text=No+Image'];
 
-  // Repeat main image for thumbnails if array only has 1 image
-  const displayImagesList =
-    rawImageList.length === 1
-      ? [rawImageList[0], rawImageList[0], rawImageList[0]]
-      : rawImageList;
+  const displayImagesList = rawImageList.length === 1
+    ? [rawImageList[0], rawImageList[0], rawImageList[0]]
+    : rawImageList;
 
   const productImages = displayImagesList.map(getBackendImageUrl);
 
@@ -188,7 +210,7 @@ const ProductDetail = () => {
               direction={{ xs: 'row', sm: 'column' }}
               spacing={1.8}
               sx={{
-                justifyContent: 'flex-start',
+                justify: 'flex-start',
                 width: { xs: '100%', sm: '130px' },
                 minWidth: { sm: '120px' },
               }}

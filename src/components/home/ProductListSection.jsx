@@ -4,19 +4,29 @@ import { useNavigate } from 'react-router-dom';
 import { ProductContext } from '../../context/ProductContext';
 import ProductCard from '../common/ProductCard';
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = 'https://shop-ecommerce-backend-pk6z857yf-hassanmhbs-projects.vercel.app';
 
 const ProductListSection = () => {
   const context = useContext(ProductContext);
   const products = context?.products || [];
   const navigate = useNavigate();
 
-  // Helper Function: Relative path ko Backend URL ke sath attach karna
+  // Helper Function: Handle Cloudinary, absolute URLs, and relative paths
   const getFullImageUrl = (imgPath) => {
-    if (!imgPath) return 'https://via.placeholder.com/300';
-    if (imgPath.startsWith('http')) return imgPath;
-    const cleanPath = imgPath.startsWith('/') ? imgPath : `/${imgPath}`;
-    return `${API_BASE}${cleanPath}`;
+    if (!imgPath) return 'https://placehold.co/300x300?text=No+Image';
+
+    let actualPath = typeof imgPath === 'object' ? (imgPath.url || imgPath.secure_url) : imgPath;
+
+    if (!actualPath || typeof actualPath !== 'string') {
+      return 'https://placehold.co/300x300?text=No+Image';
+    }
+
+    if (actualPath.startsWith('http://') || actualPath.startsWith('https://') || actualPath.startsWith('data:image')) {
+      return encodeURI(actualPath);
+    }
+
+    const cleanPath = actualPath.startsWith('/') ? actualPath : `/${actualPath}`;
+    return encodeURI(`${API_BASE}${cleanPath}`);
   };
 
   // 5th se 8th product (Index 4 se 8)
@@ -60,7 +70,7 @@ const ProductListSection = () => {
             
             const rawImg = Array.isArray(product.images) && product.images.length > 0 
               ? product.images[0] 
-              : product.image;
+              : product.image || product.img;
               
             const formattedImage = getFullImageUrl(rawImg);
 
