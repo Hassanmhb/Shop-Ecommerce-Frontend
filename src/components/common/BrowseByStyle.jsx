@@ -2,10 +2,11 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 
 // Local images ko import karein
-import casualImg from '../imgfrontend/image 11.png';
-import formalImg from '../imgfrontend/Frame 62.png';
-import partyImg from '../imgfrontend/Frame 64.png';
-import gymImg from '../imgfrontend/Frame 63.png';
+import casualImg from "../home/imgfrontend/image 11.png";
+import formalImg from "../home/imgfrontend/Frame 62.png";
+import gymImg from "../home/imgfrontend/Frame 64.png";
+import partyImg from "../home/imgfrontend/Frame 63.png";
+
 
 const categories = [
   {
