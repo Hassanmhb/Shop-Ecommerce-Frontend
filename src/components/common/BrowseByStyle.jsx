@@ -6,25 +6,22 @@ const categories = [
   {
     id: 'casual',
     title: 'Casual',
-    image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
+    image: '/src/imgfrontend/image 11.png',
     span: { xs: 12, md: 4 },
   },
   {
     id: 'formal',
-    title: 'Formal',
-    image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80',
+    image: '/src/imgfrontend/Frame 62.png',
     span: { xs: 12, md: 8 },
   },
   {
     id: 'party',
-    title: 'Party',
-    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&auto=format&fit=crop&q=80',
+    image: '/src/imgfrontend/Frame 64.png',
     span: { xs: 12, md: 8 },
   },
   {
     id: 'gym',
-    title: 'Gym',
-    image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=800&auto=format&fit=crop&q=80',
+    image: '/src/imgfrontend/Frame 63.png',
     span: { xs: 12, md: 4 },
   },
 ];
