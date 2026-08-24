@@ -1,27 +1,35 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 
-// Demo Images
+// Local images ko import karein
+import casualImg from '../imgfrontend/image 11.png';
+import formalImg from '../imgfrontend/Frame 62.png';
+import partyImg from '../imgfrontend/Frame 64.png';
+import gymImg from '../imgfrontend/Frame 63.png';
+
 const categories = [
   {
     id: 'casual',
     title: 'Casual',
-    image: '/src/imgfrontend/image 11.png',
+    image: casualImg,
     span: { xs: 12, md: 4 },
   },
   {
     id: 'formal',
-    image: '/src/imgfrontend/Frame 62.png',
+    title: 'Formal',
+    image: formalImg,
     span: { xs: 12, md: 8 },
   },
   {
     id: 'party',
-    image: '/src/imgfrontend/Frame 64.png',
+    title: 'Party',
+    image: partyImg,
     span: { xs: 12, md: 8 },
   },
   {
     id: 'gym',
-    image: '/src/imgfrontend/Frame 63.png',
+    title: 'Gym',
+    image: gymImg,
     span: { xs: 12, md: 4 },
   },
 ];
@@ -33,11 +41,9 @@ const BrowseByStyle = () => {
       sx={{
         backgroundColor: '#F0F0F0',
         borderRadius: { xs: '16px', sm: '24px', md: '32px' },
-        // Mobile par side padding tight (12px), Desktop par compact (40px)
         px: { xs: '12px', sm: '24px', md: '40px' },
         py: { xs: '20px', sm: '32px', md: '36px' },
         maxWidth: '1200px',
-        // Mobile side space fix (100% width with minimal margin)
         width: { xs: 'calc(100% - 24px)', md: '100%' },
         mx: 'auto',
         my: { xs: 2, md: 3 },
@@ -54,7 +60,6 @@ const BrowseByStyle = () => {
           mb: { xs: 2, sm: 3, md: 3.5 },
           textTransform: 'uppercase',
           color: '#000000',
-          // Desktop pe font compact kar diya taake height na barhe
           fontSize: { xs: '22px', sm: '30px', md: '36px', lg: '40px' },
           lineHeight: 1.15,
         }}
@@ -79,7 +84,6 @@ const BrowseByStyle = () => {
                 md: `span ${item.span.md}`,
               },
               position: 'relative',
-              // Card Height compact kar di taake laptop par scroll na karna pare (~190px - 210px)
               height: { xs: '150px', sm: '170px', md: '190px', lg: '210px' },
               backgroundColor: '#FFFFFF',
               borderRadius: { xs: '12px', sm: '16px', md: '20px' },
