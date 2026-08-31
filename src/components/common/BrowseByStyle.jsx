@@ -17,20 +17,17 @@ const categories = [
   },
   {
     id: 'formal',
-    title: 'Formal',
     image: formalImg,
     span: { xs: 12, md: 8 },
   },
   {
     id: 'party',
-    title: 'Party',
-    image: partyImg,
+    image: gymImg,
     span: { xs: 12, md: 8 },
   },
   {
     id: 'gym',
-    title: 'Gym',
-    image: gymImg,
+    image: partyImg,
     span: { xs: 12, md: 4 },
   },
 ];
