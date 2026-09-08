@@ -10,20 +10,13 @@ const NewArrivals = () => {
   const { products, loading } = useContext(ProductContext);
   const navigate = useNavigate();
 
-  // Helper Function: Handle Cloudinary, absolute URLs, and relative paths
   const getFullImageUrl = (imgPath) => {
     if (!imgPath) return 'https://placehold.co/300x300?text=No+Image';
-
     let actualPath = typeof imgPath === 'object' ? (imgPath.url || imgPath.secure_url) : imgPath;
-
-    if (!actualPath || typeof actualPath !== 'string') {
-      return 'https://placehold.co/300x300?text=No+Image';
-    }
-
+    if (!actualPath || typeof actualPath !== 'string') return 'https://placehold.co/300x300?text=No+Image';
     if (actualPath.startsWith('http://') || actualPath.startsWith('https://') || actualPath.startsWith('data:image')) {
       return encodeURI(actualPath);
     }
-
     const cleanPath = actualPath.startsWith('/') ? actualPath : `/${actualPath}`;
     return encodeURI(`${API_BASE}${cleanPath}`);
   };
@@ -36,7 +29,6 @@ const NewArrivals = () => {
     );
   }
 
-  // Pehle 4 products (Index 0 se 4)
   const newArrivalsList = (products || []).slice(0, 4);
 
   return (
@@ -46,7 +38,6 @@ const NewArrivals = () => {
       sx={{ py: { xs: 4, md: 8 }, borderBottom: '1px solid #E5E5E5', width: '100%' }}
     >
       <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
-        {/* Section Title */}
         <Typography
           variant="h2"
           sx={{
@@ -63,7 +54,6 @@ const NewArrivals = () => {
           NEW ARRIVALS
         </Typography>
 
-        {/* Cards Container */}
         <Box
           sx={{
             display: 'flex',
@@ -100,15 +90,13 @@ const NewArrivals = () => {
                   flex: {
                     xs: '0 0 190px',
                     sm: '0 0 calc(50% - 12px)',
-                    md: '0 0 calc(25% - 18px)'
+                    md: '0 0 calc(25% - 18px)',
                   },
                   minWidth: 0,
                   scrollSnapAlign: 'start',
                   cursor: 'pointer',
                   transition: 'transform 0.2s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-4px)'
-                  }
+                  '&:hover': { transform: 'translateY(-4px)' },
                 }}
               >
                 <ProductCard product={normalizedProduct} />
@@ -117,11 +105,10 @@ const NewArrivals = () => {
           })}
         </Box>
 
-        {/* View All Button */}
         <Box sx={{ textAlign: 'center', mt: { xs: 3, md: 5 } }}>
           <Button
             variant="outlined"
-            onClick={() => navigate('/style')}
+            onClick={() => navigate('/category')}
             sx={{
               color: '#000000',
               borderColor: 'rgba(0,0,0,0.1)',

@@ -34,8 +34,7 @@ const HeroSection = () => {
           width: '100%',
           height: '100%',
           position: 'relative',
-          justifyContent: 'space-between',
-
+          justify: 'space-between',
           '@media (min-width: 1024px)': {
             flexDirection: 'row',
             alignItems: 'stretch',
@@ -48,10 +47,9 @@ const HeroSection = () => {
             width: '100%',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'center',
+            justify: 'center',
             zIndex: 3,
             pb: { xs: 4, lg: 6 },
-
             '@media (min-width: 1024px)': {
               width: '55%',
               maxWidth: '620px',
@@ -159,7 +157,7 @@ const HeroSection = () => {
           </Box>
         </Box>
 
-        {/* Right Side Image Area - Absolute Positioned on Desktop */}
+        {/* Right Side Image Area */}
         <Box
           sx={{
             width: '100%',
@@ -168,7 +166,6 @@ const HeroSection = () => {
             justifyContent: 'center',
             alignItems: 'flex-end',
             zIndex: 1,
-
             '@media (min-width: 1024px)': {
               width: '50%',
               position: 'absolute',
@@ -180,7 +177,6 @@ const HeroSection = () => {
             },
           }}
         >
-          {/* Small Sparkle */}
           <AutoAwesomeIcon
             sx={{
               position: 'absolute',
@@ -192,7 +188,6 @@ const HeroSection = () => {
             }}
           />
 
-          {/* Big Sparkle */}
           <AutoAwesomeIcon
             sx={{
               position: 'absolute',
@@ -204,7 +199,6 @@ const HeroSection = () => {
             }}
           />
 
-          {/* Hero Image - Maximum Size Fix */}
           <Box
             component="img"
             src={heroImage}
@@ -215,8 +209,6 @@ const HeroSection = () => {
               width: '100%',
               height: 'auto',
               maxHeight: { xs: '400px', sm: '500px', lg: 'none' },
-
-              // Desktop CSS Rules to keep image BIG & AT THE BOTTOM
               '@media (min-width: 1024px)': {
                 width: '100%',
                 height: '100%',

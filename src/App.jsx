@@ -8,48 +8,22 @@ import Home from './pages/Home';
 import ProductDetail from './components/products/ProductDetail';
 import BrowseByStyle from './components/common/BrowseByStyle';
 import CategoryPage from './pages/CategoryPage';
-import CartPage from '/src/pages/CartPage'
+import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
-
-
-
-
-// Inside <Routes>
 
 function App() {
   return (
     <div>
-      {/* Toast Notifications Global Layer */}
       <ToastContainer position="top-right" autoClose={3000} />
 
-      {/* Global Navbar */}
-
-      {/* Main Routing Setup */}
       <Routes>
-        {/* Home Page Route */}
-        <Route path="/" element={<Home/>} />
-
-        {/* Dynamic Product Detail Route */}
-        <Route path="/product/:id" element={<ProductDetail/>} />
-
-
-
-        {/* Style Route */}
-        <Route path="/style" element={<BrowseByStyle/>} />
-        {/* // Inside your Routes */}
-
-<Route path="/category" element={<CategoryPage/>}></Route>
-
-<Route path="/cart" element={<CartPage />} />
-
-
-
-<Route path="/checkout" element={<CheckoutPage/>} />
-
-
+        <Route path="/" element={<Home />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/style" element={<BrowseByStyle />} />
+        <Route path="/category" element={<CategoryPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
       </Routes>
-
-
     </div>
   );
 }

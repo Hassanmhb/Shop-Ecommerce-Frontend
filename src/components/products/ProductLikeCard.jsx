@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Box, Typography, Rating } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-
-const API_BASE = 'http://localhost:8000';
+import { ProductContext } from '../../context/ProductContext';
 
 const ProductLikeCard = ({ product }) => {
   const navigate = useNavigate();
+  const { API_BASE } = useContext(ProductContext);
 
   if (!product) return null;
 
-  const productId = product.id || product._id;
+  const productId = product._id || product.id;
 
   const handleCardClick = () => {
     navigate(`/product/${productId}`);
@@ -24,7 +24,9 @@ const ProductLikeCard = ({ product }) => {
 
   let imageUrl = 'https://via.placeholder.com/300';
   if (rawImg) {
-    if (rawImg.startsWith('http')) {
+    if (typeof rawImg === 'object') {
+      imageUrl = rawImg.url || rawImg.secure_url || imageUrl;
+    } else if (rawImg.startsWith('http') || rawImg.startsWith('data:image')) {
       imageUrl = rawImg;
     } else {
       const cleanPath = rawImg.startsWith('/') ? rawImg : `/${rawImg}`;
@@ -48,7 +50,6 @@ const ProductLikeCard = ({ product }) => {
         },
       }}
     >
-      {/* Aspect-Ratio Box to avoid vertical shrinking */}
       <Box
         sx={{
           width: '100%',
@@ -79,7 +80,6 @@ const ProductLikeCard = ({ product }) => {
         />
       </Box>
 
-      {/* Title */}
       <Typography
         variant="subtitle1"
         sx={{
@@ -95,7 +95,6 @@ const ProductLikeCard = ({ product }) => {
         {title}
       </Typography>
 
-      {/* Rating */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
         <Rating
           value={Number(product.rating) || 4.5}
@@ -109,7 +108,6 @@ const ProductLikeCard = ({ product }) => {
         </Typography>
       </Box>
 
-      {/* Price & Discounts */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <Typography sx={{ fontWeight: 800, fontSize: { xs: '16px', sm: '18px', md: '20px' }, color: '#000000' }}>
           ${product.price}

@@ -10,10 +10,18 @@ import {
   IconButton,
   CircularProgress,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import axios from 'axios';
 import { ProductContext } from '../../context/ProductContext';
 import Navbar from '../layout/Navbar';
 import ProductReviews from './ProductReviews';
@@ -42,13 +50,24 @@ const ProductDetail = () => {
   const [selectedColor, setSelectedColor] = useState('#4F533E');
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
+  // Auth Pop-up Modal States
+  const [openAuthModal, setOpenAuthModal] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    city: '',
+    country: '',
+  });
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
     setSelectedImageIndex(0);
     setQuantity(1);
 
     const fetchSingleProduct = async () => {
-      // 1. Pehle context check karo
       if (products && products.length > 0) {
         const foundProduct = products.find(
           (item) => String(item.id || item._id) === String(id)
@@ -60,7 +79,6 @@ const ProductDetail = () => {
         }
       }
 
-      // 2. Agar context empty ho (direct link access), API se fetch karo
       try {
         setLoading(true);
         const res = await fetch(`${API_BASE}/api/products/${id}`);
@@ -83,20 +101,71 @@ const ProductDetail = () => {
     }
   }, [id, products, contextLoading]);
 
-  // Image URL Helper for Cloudinary, Base64 & Backend path
+  // Handle Add To Cart Click
+  const handleAddToCartClick = () => {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+
+    if (!token || !user) {
+      setOpenAuthModal(true);
+    } else {
+      addToCart({
+        ...product,
+        quantity,
+        size: selectedSize,
+        color: selectedColor,
+      });
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // User Registration & Save to MongoDB Atlas
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError('');
+
+    try {
+      const res = await axios.post(`${API_BASE}/api/auth/register-user`, formData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (res.data && res.data.token) {
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+
+        setOpenAuthModal(false);
+
+        addToCart({
+          ...product,
+          quantity,
+          size: selectedSize,
+          color: selectedColor,
+        });
+
+        setFormData({ name: '', email: '', password: '', city: '', country: '' });
+      }
+    } catch (err) {
+      console.error('Auth Request Failed:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Something went wrong. Please try again.';
+      setAuthError(errorMsg);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   const getBackendImageUrl = (imgPath) => {
     if (!imgPath) return 'https://placehold.co/400x400?text=No+Image';
-
     let actualPath = typeof imgPath === 'object' ? (imgPath.url || imgPath.secure_url) : imgPath;
-
-    if (!actualPath || typeof actualPath !== 'string') {
-      return 'https://placehold.co/400x400?text=No+Image';
-    }
-
+    if (!actualPath || typeof actualPath !== 'string') return 'https://placehold.co/400x400?text=No+Image';
     if (actualPath.startsWith('http://') || actualPath.startsWith('https://') || actualPath.startsWith('data:image')) {
       return encodeURI(actualPath);
     }
-
     const cleanPath = actualPath.startsWith('/') ? actualPath : `/${actualPath}`;
     return encodeURI(`${API_BASE}${cleanPath}`);
   };
@@ -133,14 +202,11 @@ const ProductDetail = () => {
     );
   }
 
-  // Extract from backend `images` array or fallback to single image
   const rawImages = Array.isArray(product.images) && product.images.length > 0
     ? product.images
     : [product.image || product.img].filter(Boolean);
 
-  const rawImageList = rawImages.length > 0
-    ? rawImages
-    : ['https://placehold.co/400x400?text=No+Image'];
+  const rawImageList = rawImages.length > 0 ? rawImages : ['https://placehold.co/400x400?text=No+Image'];
 
   const displayImagesList = rawImageList.length === 1
     ? [rawImageList[0], rawImageList[0], rawImageList[0]]
@@ -148,39 +214,19 @@ const ProductDetail = () => {
 
   const productImages = displayImagesList.map(getBackendImageUrl);
 
-  const relatedProducts = (products || []).filter((item) => {
-    const itemId = String(item.id || item._id);
-    return itemId !== String(id);
-  }).slice(0, 4);
+  const relatedProducts = (products || []).filter((item) => String(item.id || item._id) !== String(id)).slice(0, 4);
 
   return (
     <Box sx={{ backgroundColor: '#FFFFFF', minHeight: '100vh' }}>
       <Navbar />
 
       <Box sx={{ maxWidth: '1240px', mx: 'auto', px: { xs: 2, sm: 3, md: 5 }, py: { xs: 2, md: 4 } }}>
-        {/* Breadcrumbs */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            mb: { xs: 2.5, md: 4 },
-            color: 'text.secondary',
-            fontSize: '14px',
-            flexWrap: 'wrap',
-          }}
-        >
-          <Typography
-            onClick={() => navigate('/')}
-            sx={{ cursor: 'pointer', '&:hover': { color: 'black' }, fontSize: 'inherit' }}
-          >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 2.5, md: 4 }, color: 'text.secondary', fontSize: '14px', flexWrap: 'wrap' }}>
+          <Typography onClick={() => navigate('/')} sx={{ cursor: 'pointer', '&:hover': { color: 'black' }, fontSize: 'inherit' }}>
             Home
           </Typography>
           <Typography sx={{ fontSize: 'inherit' }}>&gt;</Typography>
-          <Typography
-            onClick={() => navigate('/')}
-            sx={{ cursor: 'pointer', '&:hover': { color: 'black' }, fontSize: 'inherit' }}
-          >
+          <Typography onClick={() => navigate('/')} sx={{ cursor: 'pointer', '&:hover': { color: 'black' }, fontSize: 'inherit' }}>
             Shop
           </Typography>
           <Typography sx={{ fontSize: 'inherit' }}>&gt;</Typography>
@@ -189,32 +235,9 @@ const ProductDetail = () => {
           </Typography>
         </Box>
 
-        {/* Product Details Container */}
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: { xs: 3, md: 4, lg: 5 },
-          }}
-        >
-          {/* Gallery */}
-          <Box
-            sx={{
-              flex: 1.1,
-              display: 'flex',
-              flexDirection: { xs: 'column-reverse', sm: 'row' },
-              gap: 2,
-            }}
-          >
-            <Stack
-              direction={{ xs: 'row', sm: 'column' }}
-              spacing={1.8}
-              sx={{
-                justify: 'flex-start',
-                width: { xs: '100%', sm: '130px' },
-                minWidth: { sm: '120px' },
-              }}
-            >
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 3, md: 4, lg: 5 } }}>
+          <Box sx={{ flex: 1.1, display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 2 }}>
+            <Stack direction={{ xs: 'row', sm: 'column' }} spacing={1.8} sx={{ width: { xs: '100%', sm: '130px' }, minWidth: { sm: '120px' } }}>
               {productImages.slice(0, 3).map((imgUrl, index) => (
                 <Box
                   key={index}
@@ -231,17 +254,12 @@ const ProductDetail = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.2s ease',
-                    '&:hover': { opacity: 0.9 },
                   }}
                 >
                   <Box
                     component="img"
                     src={imgUrl}
                     alt={`Thumbnail ${index + 1}`}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = 'https://placehold.co/100x100?text=No+Image';
-                    }}
                     sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
                   />
                 </Box>
@@ -264,30 +282,13 @@ const ProductDetail = () => {
                 component="img"
                 src={productImages[selectedImageIndex] || productImages[0]}
                 alt={product.name || product.title}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = 'https://placehold.co/400x400?text=No+Image';
-                }}
                 sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
             </Box>
           </Box>
 
-          {/* Product Specs */}
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <Typography
-              variant="h4"
-              component="h1"
-              sx={{
-                fontWeight: 900,
-                textTransform: 'uppercase',
-                mb: 1,
-                fontSize: { xs: '26px', sm: '32px', md: '38px' },
-                lineHeight: 1.1,
-                fontFamily: 'sans-serif',
-                letterSpacing: '-0.5px',
-              }}
-            >
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 900, textTransform: 'uppercase', mb: 1, fontSize: { xs: '26px', sm: '32px', md: '38px' }, lineHeight: 1.1, fontFamily: 'sans-serif' }}>
               {product.name || product.title}
             </Typography>
 
@@ -303,37 +304,21 @@ const ProductDetail = () => {
                 ${product.price}
               </Typography>
               {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                <Typography
-                  variant="h5"
-                  sx={{ textDecoration: 'line-through', color: 'rgba(0,0,0,0.3)', fontWeight: 700, fontSize: { xs: '20px', md: '26px' } }}
-                >
+                <Typography variant="h5" sx={{ textDecoration: 'line-through', color: 'rgba(0,0,0,0.3)', fontWeight: 700, fontSize: { xs: '20px', md: '26px' } }}>
                   ${product.originalPrice}
                 </Typography>
               )}
               {product.discountPercent > 0 && (
-                <Chip
-                  label={`-${product.discountPercent}%`}
-                  size="small"
-                  sx={{
-                    fontWeight: 600,
-                    backgroundColor: '#FFEBEB',
-                    color: '#FF3333',
-                    borderRadius: '62px',
-                    px: 0.5,
-                    height: '26px',
-                    fontSize: '12px',
-                  }}
-                />
+                <Chip label={`-${product.discountPercent}%`} size="small" sx={{ fontWeight: 600, backgroundColor: '#FFEBEB', color: '#FF3333', borderRadius: '62px', height: '26px', fontSize: '12px' }} />
               )}
             </Box>
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, lineHeight: 1.5, fontSize: '14px', color: 'rgba(0,0,0,0.6)' }}>
-              {product.description || 'This graphic t-shirt is perfect for any occasion. Crafted from a soft and breathable fabric, it offers superior comfort and style.'}
+              {product.description || 'This graphic t-shirt is perfect for any occasion.'}
             </Typography>
 
             <Divider sx={{ mb: 2 }} />
 
-            {/* Colors */}
             <Box sx={{ mb: 2 }}>
               <Typography variant="subtitle2" sx={{ color: 'rgba(0,0,0,0.6)', mb: 1.2, fontWeight: 400, fontSize: '14px' }}>
                 Select Colors
@@ -352,9 +337,7 @@ const ProductDetail = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      transition: 'transform 0.2s ease',
                       border: selectedColor === color.value ? '2px solid #000' : 'none',
-                      '&:hover': { transform: 'scale(1.05)' },
                     }}
                   >
                     {selectedColor === color.value && <CheckIcon sx={{ color: 'white', fontSize: '18px' }} />}
@@ -365,7 +348,6 @@ const ProductDetail = () => {
 
             <Divider sx={{ mb: 2 }} />
 
-            {/* Sizes */}
             <Box sx={{ mb: 2.5 }}>
               <Typography variant="subtitle2" sx={{ color: 'rgba(0,0,0,0.6)', mb: 1.2, fontWeight: 400, fontSize: '14px' }}>
                 Choose Size
@@ -387,10 +369,6 @@ const ProductDetail = () => {
                         fontSize: '14px',
                         fontWeight: 500,
                         boxShadow: 'none',
-                        '&:hover': {
-                          backgroundColor: isSelected ? '#1a1a1a' : '#E5E5E5',
-                          boxShadow: 'none',
-                        },
                       }}
                     >
                       {size}
@@ -402,33 +380,13 @@ const ProductDetail = () => {
 
             <Divider sx={{ mb: 2.5 }} />
 
-            {/* Quantity + Add Button */}
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  backgroundColor: '#F0F0F0',
-                  borderRadius: '62px',
-                  px: 1.5,
-                  py: 0.8,
-                  width: { xs: '110px', sm: '140px' },
-                }}
-              >
-                <IconButton
-                  size="small"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  sx={{ color: 'black', p: 0.5 }}
-                >
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F0F0F0', borderRadius: '62px', px: 1.5, py: 0.8, width: { xs: '110px', sm: '140px' } }}>
+                <IconButton size="small" onClick={() => setQuantity((q) => Math.max(1, q - 1))} sx={{ color: 'black', p: 0.5 }}>
                   <RemoveIcon fontSize="small" />
                 </IconButton>
                 <Typography sx={{ fontWeight: 700, fontSize: '15px' }}>{quantity}</Typography>
-                <IconButton
-                  size="small"
-                  onClick={() => setQuantity((q) => q + 1)}
-                  sx={{ color: 'black', p: 0.5 }}
-                >
+                <IconButton size="small" onClick={() => setQuantity((q) => q + 1)} sx={{ color: 'black', p: 0.5 }}>
                   <AddIcon fontSize="small" />
                 </IconButton>
               </Box>
@@ -436,14 +394,7 @@ const ProductDetail = () => {
               <Button
                 variant="contained"
                 fullWidth
-                onClick={() =>
-                  addToCart({
-                    ...product,
-                    quantity,
-                    size: selectedSize,
-                    color: selectedColor,
-                  })
-                }
+                onClick={handleAddToCartClick}
                 sx={{
                   backgroundColor: 'black',
                   color: 'white',
@@ -453,10 +404,7 @@ const ProductDetail = () => {
                   fontSize: '15px',
                   py: 1.4,
                   boxShadow: 'none',
-                  '&:hover': {
-                    backgroundColor: '#222',
-                    boxShadow: 'none',
-                  },
+                  '&:hover': { backgroundColor: '#222' },
                 }}
               >
                 Add to Cart
@@ -468,56 +416,127 @@ const ProductDetail = () => {
         <ProductReviews />
 
         <Box sx={{ mt: { xs: 6, md: 10 }, mb: { xs: 4, md: 6 } }}>
-          <Typography
-            variant="h3"
-            sx={{
-              textAlign: 'center',
-              fontWeight: 900,
-              fontFamily: 'sans-serif',
-              fontSize: { xs: '32px', md: '48px' },
-              letterSpacing: '-1px',
-              mb: { xs: 4, md: 6 },
-              color: '#000000',
-              textTransform: 'uppercase',
-            }}
-          >
+          <Typography variant="h3" sx={{ textAlign: 'center', fontWeight: 900, fontSize: { xs: '32px', md: '48px' }, mb: { xs: 4, md: 6 }, textTransform: 'uppercase' }}>
             YOU MIGHT ALSO LIKE
           </Typography>
-
-          <Box
-            sx={{
-              display: 'flex',
-              flexWrap: { xs: 'nowrap', md: 'wrap' },
-              overflowX: { xs: 'auto', md: 'visible' },
-              gap: { xs: 2, md: 3 },
-              pb: { xs: 1, md: 0 },
-              px: { xs: 0.5, md: 0 },
-              justifyContent: { xs: 'flex-start', md: 'center' },
-              scrollSnapType: { xs: 'x mandatory', md: 'none' },
-              '&::-webkit-scrollbar': { display: 'none' },
-              msOverflowStyle: 'none',
-              scrollbarWidth: 'none',
-            }}
-          >
+          <Box sx={{ display: 'flex', flexWrap: { xs: 'nowrap', md: 'wrap' }, overflowX: { xs: 'auto', md: 'visible' }, gap: { xs: 2, md: 3 }, justifyContent: { xs: 'flex-start', md: 'center' } }}>
             {relatedProducts.map((relProduct) => (
-              <Box
-                key={relProduct.id || relProduct._id}
-                sx={{
-                  flex: {
-                    xs: '0 0 190px',
-                    sm: '0 0 calc(50% - 12px)',
-                    md: '0 0 calc(25% - 18px)',
-                  },
-                  minWidth: 0,
-                  scrollSnapAlign: 'start',
-                }}
-              >
+              <Box key={relProduct.id || relProduct._id} sx={{ flex: { xs: '0 0 190px', sm: '0 0 calc(50% - 12px)', md: '0 0 calc(25% - 18px)' } }}>
                 <ProductLikeCard product={relProduct} />
               </Box>
             ))}
           </Box>
         </Box>
       </Box>
+
+      {/* User Information Pop-Up Modal */}
+      <Dialog
+        open={openAuthModal}
+        onClose={() => setOpenAuthModal(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '24px', p: 1.5 } }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '20px' }}>
+            Enter Information to Add Cart
+          </Typography>
+          <IconButton onClick={() => setOpenAuthModal(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <form onSubmit={handleAuthSubmit}>
+          <DialogContent sx={{ pt: 1 }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+              Please enter your details. Your data will be saved to MongoDB Atlas.
+            </Typography>
+
+            {authError && (
+              <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }}>
+                {authError}
+              </Alert>
+            )}
+
+            <TextField
+              margin="dense"
+              name="name"
+              label="Full Name"
+              type="text"
+              fullWidth
+              required
+              value={formData.name}
+              onChange={handleInputChange}
+              sx={{ mb: 1.5 }}
+            />
+            <TextField
+              margin="dense"
+              name="email"
+              label="Email Address"
+              type="email"
+              fullWidth
+              required
+              value={formData.email}
+              onChange={handleInputChange}
+              sx={{ mb: 1.5 }}
+            />
+            <TextField
+              margin="dense"
+              name="password"
+              label="Password"
+              type="password"
+              fullWidth
+              required
+              value={formData.password}
+              onChange={handleInputChange}
+              sx={{ mb: 1.5 }}
+            />
+            <TextField
+              margin="dense"
+              name="city"
+              label="City Name"
+              type="text"
+              fullWidth
+              required
+              value={formData.city}
+              onChange={handleInputChange}
+              sx={{ mb: 1.5 }}
+            />
+            <TextField
+              margin="dense"
+              name="country"
+              label="Country Name"
+              type="text"
+              fullWidth
+              required
+              value={formData.country}
+              onChange={handleInputChange}
+            />
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={authLoading}
+              sx={{
+                backgroundColor: 'black',
+                color: 'white',
+                borderRadius: '62px',
+                py: 1.2,
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '15px',
+                '&:hover': { backgroundColor: '#222' },
+              }}
+            >
+              {authLoading ? <CircularProgress size={24} color="inherit" /> : 'Submit & Add to Cart'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
       <Footer />
     </Box>
   );

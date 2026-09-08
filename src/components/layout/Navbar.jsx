@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -11,6 +11,8 @@ import {
   ListItemButton,
   ListItemText,
   Divider,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
@@ -19,24 +21,68 @@ import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import CloseIcon from '@mui/icons-material/Close';
 import { useNavigate, useLocation } from 'react-router-dom';
-
 import { ProductContext } from '../../context/ProductContext';
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [user, setUser] = useState({});
+  const [token, setToken] = useState(null);
 
+  const [anchorEl, setAnchorEl] = useState(null);
   const { totalCartCount } = useContext(ProductContext);
-
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleDrawerToggle = () => {
-    setMobileOpen((prev) => !prev);
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    setToken(storedToken);
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        setUser({});
+      }
+    } else {
+      setUser({});
+    }
+  }, [location]);
+
+  const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
+  const handleCartClick = () => navigate('/cart');
+
+  // Profile Icon Click Handler (Smart Redirect)
+  const handleProfileClick = (event) => {
+    const currentToken = localStorage.getItem('token');
+    const currentUserStr = localStorage.getItem('user');
+
+    // Agar token valid hai, tabhi Auth Callback query ke saath redirection karein
+    if (currentToken && currentUserStr && currentUserStr !== '{}') {
+      window.location.href = `http://localhost:5175/auth-callback?token=${currentToken}&user=${encodeURIComponent(currentUserStr)}`;
+    } else {
+      // Direct Admin Login Route par redirect karein jab user logged in na ho
+      window.location.href = `http://localhost:5175/login`;
+    }
   };
 
-  const handleCartClick = () => {
-    navigate('/cart');
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser({});
+    setToken(null);
+    handleMenuClose();
+    navigate('/login');
+  };
+
+  const handleSearchSubmit = (e) => {
+    if (e.key === 'Enter' && searchTerm.trim()) {
+      navigate(`/category?search=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchOpen(false);
+    }
   };
 
   const handleNavClick = (item) => {
@@ -47,22 +93,18 @@ const Navbar = () => {
         navigate('/', { state: { targetId: item.id } });
         setTimeout(() => {
           const element = document.getElementById(item.id);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 100);
+          if (element) element.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
       } else {
         const element = document.getElementById(item.id);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
+        if (element) element.scrollIntoView({ behavior: 'smooth' });
       }
     }
   };
 
   const navLinks = [
     { label: 'Shop', id: 'dress-style', type: 'scroll', hasDropdown: true },
-    { label: 'On Sale', id: 'on-sale', type: 'scroll', hasDropdown: false },
+    { label: 'On Sale', id: 'top-selling', type: 'scroll', hasDropdown: false },
     { label: 'New Arrivals', id: 'new-arrivals', type: 'scroll', hasDropdown: false },
     { label: 'Brands', path: '/category', type: 'route', hasDropdown: false },
   ];
@@ -79,10 +121,10 @@ const Navbar = () => {
         py: 2,
         backgroundColor: '#FFFFFF',
         borderBottom: '1px solid #E5E5E5',
-        gap: { xs: 1.5, md: 3, lg: 5 },
+        gap: { xs: 1, sm: 2, md: 3, lg: 5 },
       }}
     >
-      {/* Left: Mobile Menu Toggle & Logo */}
+      {/* Brand & Mobile Hamburger */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
         <IconButton
           aria-label="open drawer"
@@ -98,9 +140,9 @@ const Navbar = () => {
           onClick={() => navigate('/')}
           sx={{
             fontWeight: 900,
-            letterSpacing: '-1.5px',
+            letterSpacing: '-1px',
             fontFamily: '"Integral CF", "Arial Black", sans-serif',
-            fontSize: { xs: '22px', sm: '28px', lg: '32px' },
+            fontSize: { xs: '20px', sm: '26px', lg: '32px' },
             cursor: 'pointer',
             userSelect: 'none',
             color: '#000000',
@@ -111,12 +153,12 @@ const Navbar = () => {
         </Typography>
       </Box>
 
-      {/* Desktop Navigation Links */}
+      {/* Desktop Navigation */}
       <Box
         sx={{
           display: { xs: 'none', md: 'flex' },
           alignItems: 'center',
-          gap: { md: 2.5, lg: 3.5 },
+          gap: { md: 2, lg: 3.5 },
           whiteSpace: 'nowrap',
         }}
       >
@@ -141,9 +183,7 @@ const Navbar = () => {
                 backgroundColor: '#000000',
                 transition: 'width 0.3s ease-in-out',
               },
-              '&:hover::after': {
-                width: '100%',
-              },
+              '&:hover::after': { width: '100%' },
             }}
           >
             <Typography sx={{ fontWeight: 400, fontSize: { md: '14px', lg: '16px' } }}>
@@ -170,20 +210,20 @@ const Navbar = () => {
         <SearchIcon sx={{ color: '#888888', mr: 1, fontSize: '20px' }} />
         <InputBase
           placeholder="Search for products..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={handleSearchSubmit}
           fullWidth
           sx={{
             fontSize: '14px',
             color: '#000000',
-            '& input::placeholder': {
-              color: '#888888',
-              opacity: 1,
-            },
+            '& input::placeholder': { color: '#888888', opacity: 1 },
           }}
         />
       </Box>
 
       {/* Action Icons */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1.5 } }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
         <IconButton
           onClick={() => setSearchOpen((prev) => !prev)}
           sx={{ display: { xs: 'flex', md: 'none' }, color: '#000000', p: 1 }}
@@ -201,12 +241,13 @@ const Navbar = () => {
           </Badge>
         </IconButton>
 
-        <IconButton sx={{ color: '#000000', p: 1 }}>
+        {/* Profile Icon with Redirect Handling */}
+        <IconButton onClick={handleProfileClick} sx={{ color: '#000000', p: 1 }}>
           <AccountCircleOutlinedIcon sx={{ fontSize: { xs: '22px', sm: '24px' } }} />
         </IconButton>
       </Box>
 
-      {/* Mobile Expandable Search Bar */}
+      {/* Mobile Search Input Popup */}
       {searchOpen && (
         <Box
           sx={{
@@ -221,7 +262,6 @@ const Navbar = () => {
             zIndex: 99,
             display: { xs: 'flex', md: 'none' },
             alignItems: 'center',
-            gap: 1,
           }}
         >
           <Box
@@ -236,22 +276,26 @@ const Navbar = () => {
             }}
           >
             <SearchIcon sx={{ color: '#888888', mr: 1, fontSize: '20px' }} />
-            <InputBase placeholder="Search for products..." fullWidth autoFocus sx={{ fontSize: '14px' }} />
+            <InputBase
+              placeholder="Search for products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleSearchSubmit}
+              fullWidth
+              autoFocus
+              sx={{ fontSize: '14px' }}
+            />
           </Box>
         </Box>
       )}
 
-      {/* Mobile Side Drawer */}
+      {/* Mobile Sidebar Navigation Drawer */}
       <Drawer
         anchor="left"
         open={mobileOpen}
         onClose={handleDrawerToggle}
         ModalProps={{ keepMounted: true }}
-        slotProps={{
-          paper: {
-            sx: { width: '280px', p: 2.5 },
-          },
-        }}
+        PaperProps={{ sx: { width: '280px', p: 2.5 } }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: 'sans-serif' }}>
@@ -261,9 +305,7 @@ const Navbar = () => {
             <CloseIcon />
           </IconButton>
         </Box>
-
         <Divider sx={{ mb: 2 }} />
-
         <List disablePadding>
           {navLinks.map((item) => (
             <ListItem key={item.label} disablePadding sx={{ mb: 1 }}>
@@ -272,11 +314,7 @@ const Navbar = () => {
                   handleDrawerToggle();
                   handleNavClick(item);
                 }}
-                sx={{
-                  borderRadius: '8px',
-                  py: 1,
-                  '&:hover': { backgroundColor: '#F5F5F5' },
-                }}
+                sx={{ borderRadius: '8px', py: 1, '&:hover': { backgroundColor: '#F5F5F5' } }}
               >
                 <ListItemText
                   primary={item.label}

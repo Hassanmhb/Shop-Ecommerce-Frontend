@@ -4,7 +4,6 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-// Customer Reviews Data
 const testimonials = [
   {
     id: 1,
@@ -49,10 +48,8 @@ const testimonials = [
 ];
 
 const HappyCustomers = () => {
-  // Slider reference for button clicks
   const scrollRef = useRef(null);
 
-  // Left/Right Arrow Scroll Handler
   const handleScroll = (direction) => {
     if (scrollRef.current) {
       const scrollAmount = direction === 'left' ? -380 : 380;
@@ -66,7 +63,6 @@ const HappyCustomers = () => {
   return (
     <Box component="section" sx={{ py: { xs: 5, md: 8 }, width: '100%', overflow: 'hidden' }}>
       <Container maxWidth="lg">
-        {/* Header Section: Title + Navigation Arrows */}
         <Box
           sx={{
             display: 'flex',
@@ -75,7 +71,6 @@ const HappyCustomers = () => {
             mb: { xs: 3, md: 5 },
           }}
         >
-          {/* Main Title */}
           <Typography
             variant="h2"
             sx={{
@@ -90,7 +85,6 @@ const HappyCustomers = () => {
             OUR HAPPY CUSTOMERS
           </Typography>
 
-          {/* Slider Arrow Buttons (← / →) */}
           <Box sx={{ display: 'flex', gap: 1 }}>
             <IconButton
               onClick={() => handleScroll('left')}
@@ -113,7 +107,6 @@ const HappyCustomers = () => {
           </Box>
         </Box>
 
-        {/* Horizontal Slider Cards Container */}
         <Box
           ref={scrollRef}
           sx={{
@@ -122,7 +115,6 @@ const HappyCustomers = () => {
             overflowX: 'auto',
             scrollSnapType: 'x mandatory',
             py: 1,
-            // Hide scrollbar
             '&::-webkit-scrollbar': { display: 'none' },
             msOverflowStyle: 'none',
             scrollbarWidth: 'none',
@@ -133,9 +125,9 @@ const HappyCustomers = () => {
               key={item.id}
               sx={{
                 flex: {
-                  xs: '0 0 280px', // Mobile card width
-                  sm: '0 0 340px', // Tablet card width
-                  md: '0 0 380px', // Desktop card width
+                  xs: '0 0 280px',
+                  sm: '0 0 340px',
+                  md: '0 0 380px',
                 },
                 scrollSnapAlign: 'start',
                 backgroundColor: '#FFFFFF',
@@ -144,22 +136,20 @@ const HappyCustomers = () => {
                 p: { xs: 2.5, md: 3.5 },
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'flex-start',
+                justify: 'flex-start',
                 boxSizing: 'border-box',
               }}
             >
-              {/* Star Rating */}
               <Rating
                 value={item.rating}
                 readOnly
                 size="small"
                 sx={{
-                  color: '#FFC107', // Yellow Star Color
+                  color: '#FFC107',
                   mb: 1.5,
                 }}
               />
 
-              {/* Customer Name + Verified Badge */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.5 }}>
                 <Typography
                   sx={{
@@ -173,14 +163,13 @@ const HappyCustomers = () => {
                 {item.verified && (
                   <CheckCircleIcon
                     sx={{
-                      color: '#01B763', // Green Badge Color
+                      color: '#01B763',
                       fontSize: { xs: '18px', md: '20px' },
                     }}
                   />
                 )}
               </Box>
 
-              {/* Review Text */}
               <Typography
                 sx={{
                   color: 'rgba(0,0,0,0.6)',

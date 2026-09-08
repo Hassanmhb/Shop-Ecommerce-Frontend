@@ -50,7 +50,7 @@ const CategoryPage = () => {
   const [error, setError] = useState(null);
 
   // Filter Active States
-  const [priceRange, setPriceRange] = useState([0, 500]);
+  const [priceRange, setPriceRange] = useState([0, 1000]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
@@ -58,6 +58,10 @@ const CategoryPage = () => {
   
   const [sortBy, setSortBy] = useState('Most Popular');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -69,6 +73,8 @@ const CategoryPage = () => {
         }
         const data = await response.json();
         const productList = Array.isArray(data) ? data : data.products || [];
+        
+        console.log("Fetched Backend Data:", productList);
         setProducts(productList);
         setFilteredProducts(productList);
       } catch (err) {
@@ -82,45 +88,79 @@ const CategoryPage = () => {
     fetchProducts();
   }, []);
 
-  // Flexible Filtering & Ranking Logic
+  // Safe Case-Insensitive String Matcher
+  const normalize = (str) => String(str || '').toLowerCase().trim();
+
   const handleApplyFilter = () => {
-    // 1. Pehle Price Range aur Category ke tehet products filter kar lein
-    let baseProducts = products.filter((item) => {
-      const itemPrice = Number(item.price);
+    let result = products.filter((item) => {
+      // 1. Safe Price Check
+      const rawPrice = item.price ?? item.cost ?? 0;
+      const itemPrice = typeof rawPrice === 'number' ? rawPrice : parseFloat(String(rawPrice).replace(/[^0-9.]/g, ''));
       const passPrice = isNaN(itemPrice) ? true : (itemPrice >= priceRange[0] && itemPrice <= priceRange[1]);
-      
-      const passCategory = !selectedCategory || 
-        (item.category && item.category.toLowerCase().includes(selectedCategory.toLowerCase()));
 
-      return passPrice && passCategory;
+      // 2. Category Check (Matches Category OR Product Name/Title/Description)
+      let passCategory = true;
+      if (selectedCategory) {
+        const searchTerm = normalize(selectedCategory);
+        const prodCategory = normalize(item.category);
+        const prodName = normalize(item.name || item.title || item.productName || item.description);
+        
+        passCategory = prodCategory.includes(searchTerm) || prodName.includes(searchTerm);
+      }
+
+      // 3. Color Check
+      let passColor = !selectedColor;
+      if (selectedColor && item.colors) {
+        if (Array.isArray(item.colors)) {
+          passColor = item.colors.some(c => normalize(c).includes(normalize(selectedColor)));
+        } else {
+          passColor = normalize(item.colors).includes(normalize(selectedColor));
+        }
+      }
+
+      // 4. Size Check
+      let passSize = !selectedSize;
+      if (selectedSize && item.sizes) {
+        if (Array.isArray(item.sizes)) {
+          passSize = item.sizes.some(s => normalize(s).includes(normalize(selectedSize)));
+        } else {
+          passSize = normalize(item.sizes).includes(normalize(selectedSize));
+        }
+      }
+
+      // 5. Dress Style Check (Matches Style OR Product Name/Title/Description)
+      let passStyle = true;
+      if (selectedStyle) {
+        const styleTerm = normalize(selectedStyle);
+        const prodStyle = normalize(item.style || item.dressStyle);
+        const prodName = normalize(item.name || item.title || item.productName || item.description);
+
+        passStyle = prodStyle.includes(styleTerm) || prodName.includes(styleTerm);
+      }
+
+      return passPrice && passCategory && passColor && passSize && passStyle;
     });
 
-    // 2. Exact Match Check (Agr koi filter match na kare to fall back to price range base list)
-    let exactMatches = baseProducts.filter((item) => {
-      const passColor = !selectedColor || 
-        (Array.isArray(item.colors) && item.colors.some(c => c.toLowerCase() === selectedColor.toLowerCase()));
-
-      const passSize = !selectedSize || 
-        (Array.isArray(item.sizes) && item.sizes.some(s => s.toLowerCase() === selectedSize.toLowerCase()));
-
-      const passStyle = !selectedStyle || 
-        (item.style && item.style.toLowerCase().includes(selectedStyle.toLowerCase()));
-
-      return passColor && passSize && passStyle;
-    });
-
-    // Strategy: Agar match waale products mil jayein to wo show honge, warna price range me aane wale sare products dikhenge
-    let result = exactMatches.length > 0 ? exactMatches : baseProducts;
-
-    // 3. Sorting Apply Karein
+    // Sorting
     if (sortBy === 'Low to High') {
-      result.sort((a, b) => Number(a.price) - Number(b.price));
+      result.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
     } else if (sortBy === 'High to Low') {
-      result.sort((a, b) => Number(b.price) - Number(a.price));
+      result.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
     }
 
-    setFilteredProducts([...result]);
+    setFilteredProducts(result);
+    setCurrentPage(1);
     setMobileFilterOpen(false);
+  };
+
+  const handleResetFilters = () => {
+    setPriceRange([0, 1000]);
+    setSelectedCategory('');
+    setSelectedColor('');
+    setSelectedSize('');
+    setSelectedStyle('');
+    setFilteredProducts(products);
+    setCurrentPage(1);
   };
 
   const handleSortChange = (e) => {
@@ -129,11 +169,26 @@ const CategoryPage = () => {
     
     let sortedList = [...filteredProducts];
     if (value === 'Low to High') {
-      sortedList.sort((a, b) => Number(a.price) - Number(b.price));
+      sortedList.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
     } else if (value === 'High to Low') {
-      sortedList.sort((a, b) => Number(b.price) - Number(a.price));
+      sortedList.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
     }
     setFilteredProducts(sortedList);
+    setCurrentPage(1);
+  };
+
+  // Dynamic Page Title
+  const currentHeading = selectedCategory || selectedStyle || 'All Products';
+
+  // Dynamic Pagination Calculations
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const indexOfLastProduct = currentPage * itemsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const FilterContent = (
@@ -160,13 +215,16 @@ const CategoryPage = () => {
             onClick={() => setSelectedCategory(selectedCategory === cat ? '' : cat)}
             sx={{
               display: 'flex',
-              justifyContent: 'space-between',
+              justify: 'space-between',
               alignItems: 'center',
               py: 0.8,
+              px: 1,
+              borderRadius: '8px',
               cursor: 'pointer',
+              backgroundColor: selectedCategory === cat ? '#f0f0f0' : 'transparent',
               color: selectedCategory === cat ? '#000' : 'rgba(0,0,0,0.6)',
               fontWeight: selectedCategory === cat ? 700 : 400,
-              '&:hover': { color: '#000' },
+              '&:hover': { color: '#000', backgroundColor: '#f5f5f5' },
             }}
           >
             <Typography variant="body2" sx={{ fontSize: '14px', fontWeight: 'inherit' }}>{cat}</Typography>
@@ -187,7 +245,7 @@ const CategoryPage = () => {
             onChange={(e, newValue) => setPriceRange(newValue)}
             valueLabelDisplay="auto"
             min={0}
-            max={500}
+            max={1000}
             sx={{ color: '#000000' }}
           />
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -198,7 +256,7 @@ const CategoryPage = () => {
       </Accordion>
       <Divider sx={{ my: 1 }} />
 
-      {/* COLORS (PERFECTLY CENTERED TICK FIX) */}
+      {/* COLORS */}
       <Accordion defaultExpanded elevation={0} sx={{ '&:before': { display: 'none' } }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Colors</Typography>
@@ -219,7 +277,7 @@ const CategoryPage = () => {
                     border: colorObj.hex === '#FFFFFF' ? '1px solid #ccc' : 'none',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    justify: 'center',
                     cursor: 'pointer',
                     boxShadow: isSelected ? '0 0 0 2px #000' : 'none',
                     lineHeight: 0,
@@ -294,13 +352,16 @@ const CategoryPage = () => {
                 onClick={() => setSelectedStyle(isSelected ? '' : style)}
                 sx={{
                   display: 'flex',
-                  justifyContent: 'space-between',
+                  justify: 'space-between',
                   alignItems: 'center',
                   py: 0.8,
+                  px: 1,
+                  borderRadius: '8px',
                   cursor: 'pointer',
+                  backgroundColor: isSelected ? '#f0f0f0' : 'transparent',
                   color: isSelected ? '#000' : 'rgba(0,0,0,0.6)',
                   fontWeight: isSelected ? 700 : 400,
-                  '&:hover': { color: '#000' },
+                  '&:hover': { color: '#000', backgroundColor: '#f5f5f5' },
                 }}
               >
                 <Typography variant="body2" sx={{ fontWeight: 'inherit' }}>{style}</Typography>
@@ -327,6 +388,21 @@ const CategoryPage = () => {
       >
         Apply Filter
       </Button>
+
+      <Button
+        fullWidth
+        variant="text"
+        onClick={handleResetFilters}
+        sx={{
+          color: '#888',
+          py: 0.8,
+          mt: 1,
+          textTransform: 'none',
+          fontSize: '13px',
+        }}
+      >
+        Reset Filters
+      </Button>
     </Box>
   );
 
@@ -336,9 +412,9 @@ const CategoryPage = () => {
 
       <Box sx={{ maxWidth: '1240px', mx: 'auto', px: { xs: 1.5, sm: 3, md: 4 }, py: { xs: 1.5, md: 3 } }}>
         
-        {/* Breadcrumb Navigation */}
+        {/* Dynamic Breadcrumb Navigation */}
         <Typography variant="body2" sx={{ color: 'text.secondary', mb: { xs: 1.5, md: 3 }, fontSize: { xs: '12px', sm: '14px' } }}>
-          Home &gt; <Typography component="span" sx={{ color: 'text.primary', fontWeight: 600, fontSize: 'inherit' }}>Casual</Typography>
+          Home &gt; <Typography component="span" sx={{ color: 'text.primary', fontWeight: 600, fontSize: 'inherit' }}>{currentHeading}</Typography>
         </Typography>
 
         <Box sx={{ display: 'flex', gap: 3 }}>
@@ -373,11 +449,11 @@ const CategoryPage = () => {
           {/* RIGHT SIDE: PRODUCTS LIST */}
           <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
             
-            {/* Header Section */}
+            {/* Dynamic Header Section */}
             <Box 
               sx={{ 
                 display: 'flex', 
-                justifyContent: 'space-between', 
+                justify: 'space-between', 
                 alignItems: 'center', 
                 mb: { xs: 2, md: 3 },
                 width: '100%'
@@ -385,10 +461,10 @@ const CategoryPage = () => {
             >
               <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
                 <Typography variant="h4" sx={{ fontWeight: 900, fontSize: { xs: '20px', sm: '28px', md: '32px' } }}>
-                  Casual
+                  {currentHeading}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '10px', sm: '12px', md: '14px' }, whiteSpace: 'nowrap' }}>
-                  Showing {filteredProducts.length > 0 ? `1-${filteredProducts.length}` : '0'} of {filteredProducts.length} Products
+                  Showing {filteredProducts.length > 0 ? `${indexOfFirstProduct + 1}-${Math.min(indexOfLastProduct, filteredProducts.length)}` : '0'} of {filteredProducts.length} Products
                 </Typography>
               </Box>
 
@@ -432,9 +508,18 @@ const CategoryPage = () => {
                 Error loading products: {error}
               </Typography>
             ) : filteredProducts.length === 0 ? (
-              <Typography textAlign="center" sx={{ py: 4, fontSize: '14px' }}>
-                No products found matching your selected price range.
-              </Typography>
+              <Box sx={{ textAlign: 'center', py: 6 }}>
+                <Typography variant="body1" sx={{ fontWeight: 600, mb: 1 }}>
+                  No products found matching your selected criteria.
+                </Typography>
+                <Button 
+                  variant="outlined" 
+                  onClick={handleResetFilters}
+                  sx={{ textTransform: 'none', color: '#000', borderColor: '#000', borderRadius: '20px', mt: 1 }}
+                >
+                  Clear All Filters
+                </Button>
+              </Box>
             ) : (
               <Box
                 sx={{
@@ -447,7 +532,7 @@ const CategoryPage = () => {
                   width: '100%',
                 }}
               >
-                {filteredProducts.map((product) => (
+                {currentProducts.map((product) => (
                   <Box key={product._id || product.id} sx={{ width: '100%', minWidth: 0 }}>
                     <ProductCard product={product} />
                   </Box>
@@ -457,21 +542,30 @@ const CategoryPage = () => {
 
             <Divider sx={{ my: { xs: 3, md: 4 } }} />
             
-            <Box sx={{ display: 'flex', justifyContent: 'center', pb: 2 }}>
-              <Pagination 
-                count={10} 
-                shape="rounded" 
-                size="small"
-                sx={{
-                  '& .MuiPaginationItem-root': {
-                    fontSize: { xs: '11px', sm: '13px' },
-                    minWidth: { xs: '24px', sm: '32px' },
-                    height: { xs: '24px', sm: '32px' },
-                    px: { xs: 0.5, sm: 1 }
-                  }
-                }}
-              />
-            </Box>
+            {/* Dynamic Pagination Controls */}
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', pb: 2 }}>
+                <Pagination 
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={handlePageChange}
+                  shape="rounded" 
+                  size="small"
+                  sx={{
+                    '& .MuiPaginationItem-root': {
+                      fontSize: { xs: '11px', sm: '13px' },
+                      minWidth: { xs: '24px', sm: '32px' },
+                      height: { xs: '24px', sm: '32px' },
+                      px: { xs: 0.5, sm: 1 }
+                    },
+                    '& .Mui-selected': {
+                      backgroundColor: '#000 !important',
+                      color: '#fff',
+                    }
+                  }}
+                />
+              </Box>
+            )}
 
           </Box>
         </Box>

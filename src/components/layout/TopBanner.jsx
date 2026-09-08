@@ -22,13 +22,12 @@ const TopBanner = () => {
         px: { xs: 1, sm: 2 },
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justify: 'space-between',
         width: '100%',
         boxSizing: 'border-box',
         overflow: 'hidden',
       }}
     >
-      {/* Centered Content Wrapper */}
       <Box 
         sx={{ 
           flex: 1, 
@@ -65,7 +64,6 @@ const TopBanner = () => {
         </Typography>
       </Box>
 
-      {/* Close Button */}
       <IconButton
         size="small"
         onClick={() => setShowBanner(false)}

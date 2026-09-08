@@ -1,41 +1,44 @@
 import React, { useContext } from 'react';
-import { Box, Typography, Button, Container } from '@mui/material';
+import { Box, Typography, Button, Container, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { ProductContext } from '../../context/ProductContext';
+import { ProductContext, API_BASE } from '../../context/ProductContext';
 import ProductCard from '../common/ProductCard';
-
-const API_BASE = 'https://shop-ecommerce-backend-pk6z857yf-hassanmhbs-projects.vercel.app';
 
 const ProductListSection = () => {
   const context = useContext(ProductContext);
   const products = context?.products || [];
+  const loading = context?.loading || false;
   const navigate = useNavigate();
 
-  // Helper Function: Handle Cloudinary, absolute URLs, and relative paths
   const getFullImageUrl = (imgPath) => {
     if (!imgPath) return 'https://placehold.co/300x300?text=No+Image';
-
     let actualPath = typeof imgPath === 'object' ? (imgPath.url || imgPath.secure_url) : imgPath;
-
-    if (!actualPath || typeof actualPath !== 'string') {
-      return 'https://placehold.co/300x300?text=No+Image';
-    }
-
+    if (!actualPath || typeof actualPath !== 'string') return 'https://placehold.co/300x300?text=No+Image';
     if (actualPath.startsWith('http://') || actualPath.startsWith('https://') || actualPath.startsWith('data:image')) {
       return encodeURI(actualPath);
     }
-
     const cleanPath = actualPath.startsWith('/') ? actualPath : `/${actualPath}`;
     return encodeURI(`${API_BASE}${cleanPath}`);
   };
 
-  // 5th se 8th product (Index 4 se 8)
-  const topSellingList = products.slice(4, 8);
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress color="inherit" />
+      </Box>
+    );
+  }
+
+  // Safe slice: Agar 8 se zyada products hain to 4-8, aksar shuruati products (0-4) show karega
+  const topSellingList = products.length >= 8 ? products.slice(4, 8) : products.slice(0, 4);
 
   return (
-    <Box sx={{ py: { xs: 4, md: 8 }, borderBottom: '1px solid #E5E5E5', width: '100%' }}>
+    <Box
+      component="section"
+      id="top-selling"
+      sx={{ py: { xs: 4, md: 8 }, borderBottom: '1px solid #E5E5E5', width: '100%' }}
+    >
       <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
-        {/* Section Title */}
         <Typography
           variant="h2"
           sx={{
@@ -46,12 +49,12 @@ const ProductListSection = () => {
             mb: { xs: 3, md: 6 },
             letterSpacing: '-1px',
             textTransform: 'uppercase',
+            color: '#000000',
           }}
         >
           TOP SELLING
         </Typography>
 
-        {/* Cards Container */}
         <Box
           sx={{
             display: 'flex',
@@ -67,18 +70,15 @@ const ProductListSection = () => {
         >
           {topSellingList.map((product) => {
             const productId = product.id || product._id;
-            
             const rawImg = Array.isArray(product.images) && product.images.length > 0 
               ? product.images[0] 
               : product.image || product.img;
-              
-            const formattedImage = getFullImageUrl(rawImg);
 
             const normalizedProduct = {
               ...product,
               id: productId,
               title: product.title || product.name,
-              image: formattedImage,
+              image: getFullImageUrl(rawImg),
             };
 
             return (
@@ -89,15 +89,13 @@ const ProductListSection = () => {
                   flex: {
                     xs: '0 0 190px',
                     sm: '0 0 calc(50% - 12px)',
-                    md: '0 0 calc(25% - 18px)'
+                    md: '0 0 calc(25% - 18px)',
                   },
                   minWidth: 0,
                   scrollSnapAlign: 'start',
                   cursor: 'pointer',
                   transition: 'transform 0.2s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-4px)'
-                  }
+                  '&:hover': { transform: 'translateY(-4px)' },
                 }}
               >
                 <ProductCard product={normalizedProduct} />
@@ -106,11 +104,10 @@ const ProductListSection = () => {
           })}
         </Box>
 
-        {/* View All Button */}
         <Box sx={{ textAlign: 'center', mt: { xs: 3, md: 5 } }}>
           <Button
             variant="outlined"
-            onClick={() => navigate('/style')}
+            onClick={() => navigate('/category')}
             sx={{
               color: '#000000',
               borderColor: 'rgba(0,0,0,0.1)',
