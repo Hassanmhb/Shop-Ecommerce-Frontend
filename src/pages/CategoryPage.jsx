@@ -28,7 +28,6 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/common/Footer'; 
 import ProductCard from '../components/common/ProductCard';
 
-// 🟢 Localhost aur Live Vercel Backend auto-switch logic
 const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const API_BASE_URL = IS_LOCAL 
   ? 'http://localhost:8000' 
@@ -38,7 +37,6 @@ const API = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Image URL Helper Function
 const getFullImageUrl = (imgPath) => {
   if (!imgPath) return 'https://placehold.co/300x300?text=No+Image';
   let actualPath = typeof imgPath === 'object' ? (imgPath.url || imgPath.secure_url) : imgPath;
@@ -64,10 +62,7 @@ const COLOR_OPTIONS = [
 ];
 
 const SIZE_OPTIONS = ['XX-Small', 'X-Small', 'Small', 'Medium', 'Large', 'X-Large', 'XX-Large', '3X-Large', '4X-Large'];
-
-// ✅ 'New Arrivals' wapas add kar diya hai taakay database categories se match ho jaye
 const CATEGORIES = ['New Arrivals', 'T-Shirts', 'Shorts', 'Shirts', 'Hoodie', 'Jeans'];
-
 const DRESS_STYLES = ['Formal', 'Party', 'Gym'];
 
 const CategoryPage = () => {
@@ -77,7 +72,6 @@ const CategoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filter Active States
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
@@ -87,7 +81,6 @@ const CategoryPage = () => {
   const [sortBy, setSortBy] = useState('Most Popular');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-  // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
@@ -95,16 +88,24 @@ const CategoryPage = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  // MongoDB Se Data Fetch Karne Ka Function
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+        console.log("Fetching products from:", `${API_BASE_URL}/api/products`);
         const response = await API.get('/api/products');
-        const data = response.data;
+        console.log("API Response Data:", response.data);
         
-        const productList = Array.isArray(data) ? data : data.products || [];
-        
+        let productList = [];
+        if (Array.isArray(response.data)) {
+          productList = response.data;
+        } else if (response.data && Array.isArray(response.data.products)) {
+          productList = response.data.products;
+        } else if (response.data && Array.isArray(response.data.data)) {
+          productList = response.data.data;
+        }
+
+        console.log("Processed Product List:", productList);
         setProducts(productList);
         setFilteredProducts(productList); 
       } catch (err) {
@@ -120,11 +121,16 @@ const CategoryPage = () => {
 
   const normalize = (str) => {
     if (!str) return '';
-    return String(str)
-      .toLowerCase()
-      .replace(/[-_\s]/g, '') 
-      .trim();
+    return String(str).toLowerCase().replace(/[-_\s]/g, '').trim();
   };
+
+  // Jab tak user "Apply Filter" na dabaye, ya agar koi filter select nahi hai, toh saare products dikhne chahiye
+  useEffect(() => {
+    // Agar filters khali hain, toh default poori list show ho
+    if (!selectedCategory && !selectedColor && !selectedSize && !selectedStyle && priceRange[0] === 0 && priceRange[1] === 1000) {
+      setFilteredProducts(products);
+    }
+  }, [products, selectedCategory, selectedColor, selectedSize, selectedStyle, priceRange]);
 
   const handleApplyFilter = () => {
     let result = products.filter((item) => {
@@ -138,40 +144,32 @@ const CategoryPage = () => {
         if (searchTerm.endsWith('s') && searchTerm.length > 3) {
           searchTerm = searchTerm.slice(0, -1);
         }
-
         const prodCategory = normalize(item.category);
-        const prodName = normalize(item.name || item.title || item.productName || item.description);
-        
-        // Exact ya partial match dono check honge
+        const prodName = normalize(item.name || item.title || item.productName);
         passCategory = prodCategory.includes(searchTerm) || searchTerm.includes(prodCategory) || prodName.includes(searchTerm);
       }
 
       let passColor = !selectedColor;
       if (selectedColor && item.colors) {
         const searchColor = normalize(selectedColor);
-        if (Array.isArray(item.colors)) {
-          passColor = item.colors.some(c => normalize(c).includes(searchColor));
-        } else {
-          passColor = normalize(item.colors).includes(searchColor);
-        }
+        passColor = Array.isArray(item.colors) 
+          ? item.colors.some(c => normalize(c).includes(searchColor))
+          : normalize(item.colors).includes(searchColor);
       }
 
       let passSize = !selectedSize;
       if (selectedSize && item.sizes) {
         const searchSize = normalize(selectedSize);
-        if (Array.isArray(item.sizes)) {
-          passSize = item.sizes.some(s => normalize(s).includes(searchSize));
-        } else {
-          passSize = normalize(item.sizes).includes(searchSize);
-        }
+        passSize = Array.isArray(item.sizes)
+          ? item.sizes.some(s => normalize(s).includes(searchSize))
+          : normalize(item.sizes).includes(searchSize);
       }
 
       let passStyle = true;
       if (selectedStyle) {
         const styleTerm = normalize(selectedStyle);
         const prodStyle = normalize(item.style || item.dressStyle);
-        const prodName = normalize(item.name || item.title || item.productName || item.description);
-
+        const prodName = normalize(item.name || item.title || item.productName);
         passStyle = prodStyle.includes(styleTerm) || prodName.includes(styleTerm);
       }
 
@@ -202,7 +200,6 @@ const CategoryPage = () => {
   const handleSortChange = (e) => {
     const value = e.target.value;
     setSortBy(value);
-    
     let sortedList = [...filteredProducts];
     if (value === 'Low to High') {
       sortedList.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
@@ -214,7 +211,6 @@ const CategoryPage = () => {
   };
 
   const currentHeading = selectedCategory || selectedStyle || 'All Products';
-
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const indexOfLastProduct = currentPage * itemsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
@@ -229,19 +225,13 @@ const CategoryPage = () => {
     <Box sx={{ width: '100%', p: 2 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 800 }}>Filters</Typography>
-        
-        <IconButton 
-          onClick={() => setMobileFilterOpen(false)} 
-          sx={{ display: { xs: 'flex', md: 'none' }, p: 0.5 }}
-        >
+        <IconButton onClick={() => setMobileFilterOpen(false)} sx={{ display: { xs: 'flex', md: 'none' }, p: 0.5 }}>
           <CloseIcon sx={{ color: '#000' }} />
         </IconButton>
-
         <TuneIcon sx={{ display: { xs: 'none', md: 'block' }, color: 'rgba(0,0,0,0.4)' }} />
       </Box>
       <Divider sx={{ mb: 2 }} />
 
-      {/* CATEGORIES */}
       <Box sx={{ mb: 2 }}>
         {CATEGORIES.map((cat) => (
           <Box
@@ -268,7 +258,6 @@ const CategoryPage = () => {
       </Box>
       <Divider sx={{ mb: 1 }} />
 
-      {/* PRICE RANGE */}
       <Accordion defaultExpanded elevation={0} sx={{ '&:before': { display: 'none' } }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Price</Typography>
@@ -290,7 +279,6 @@ const CategoryPage = () => {
       </Accordion>
       <Divider sx={{ my: 1 }} />
 
-      {/* COLORS */}
       <Accordion defaultExpanded elevation={0} sx={{ '&:before': { display: 'none' } }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Colors</Typography>
@@ -314,20 +302,9 @@ const CategoryPage = () => {
                     justifyContent: 'center',
                     cursor: 'pointer',
                     boxShadow: isSelected ? '0 0 0 2px #000' : 'none',
-                    lineHeight: 0,
                   }}
                 >
-                  {isSelected && (
-                    <CheckIcon 
-                      sx={{ 
-                        color: colorObj.hex === '#FFFFFF' ? '#000' : '#fff', 
-                        fontSize: '18px',
-                        display: 'block',
-                        margin: 'auto',
-                        padding: 0
-                      }} 
-                    />
-                  )}
+                  {isSelected && <CheckIcon sx={{ color: colorObj.hex === '#FFFFFF' ? '#000' : '#fff', fontSize: '18px' }} />}
                 </Box>
               );
             })}
@@ -336,7 +313,6 @@ const CategoryPage = () => {
       </Accordion>
       <Divider sx={{ my: 1 }} />
 
-      {/* SIZES */}
       <Accordion defaultExpanded elevation={0} sx={{ '&:before': { display: 'none' } }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Size</Typography>
@@ -358,9 +334,6 @@ const CategoryPage = () => {
                     py: 0.5,
                     textTransform: 'none',
                     minWidth: 'auto',
-                    '&:hover': {
-                      backgroundColor: isSelected ? '#333' : '#E0E0E0'
-                    }
                   }}
                 >
                   {size}
@@ -372,7 +345,6 @@ const CategoryPage = () => {
       </Accordion>
       <Divider sx={{ my: 1 }} />
 
-      {/* DRESS STYLE */}
       <Accordion defaultExpanded elevation={0} sx={{ '&:before': { display: 'none' } }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Dress Style</Typography>
@@ -395,7 +367,6 @@ const CategoryPage = () => {
                   backgroundColor: isSelected ? '#f0f0f0' : 'transparent',
                   color: isSelected ? '#000' : 'rgba(0,0,0,0.6)',
                   fontWeight: isSelected ? 700 : 400,
-                  '&:hover': { color: '#000', backgroundColor: '#f5f5f5' },
                 }}
               >
                 <Typography variant="body2" sx={{ fontWeight: 'inherit' }}>{style}</Typography>
@@ -410,15 +381,7 @@ const CategoryPage = () => {
         fullWidth
         variant="contained"
         onClick={handleApplyFilter}
-        sx={{
-          backgroundColor: '#000000',
-          color: '#FFFFFF',
-          borderRadius: '62px',
-          py: 1.2,
-          mt: 2,
-          textTransform: 'none',
-          fontWeight: 600,
-        }}
+        sx={{ backgroundColor: '#000', color: '#fff', borderRadius: '62px', py: 1.2, mt: 2, textTransform: 'none', fontWeight: 600 }}
       >
         Apply Filter
       </Button>
@@ -427,13 +390,7 @@ const CategoryPage = () => {
         fullWidth
         variant="text"
         onClick={handleResetFilters}
-        sx={{
-          color: '#888',
-          py: 0.8,
-          mt: 1,
-          textTransform: 'none',
-          fontSize: '13px',
-        }}
+        sx={{ color: '#888', py: 0.8, mt: 1, textTransform: 'none', fontSize: '13px' }}
       >
         Reset Filters
       </Button>
@@ -443,119 +400,47 @@ const CategoryPage = () => {
   return (
     <Box sx={{ backgroundColor: '#FFFFFF', minHeight: '100vh', overflowX: 'hidden' }}>
       <Navbar />
-
       <Box sx={{ maxWidth: '1240px', mx: 'auto', px: { xs: 1.5, sm: 3, md: 4 }, py: { xs: 1.5, md: 3 } }}>
         
-        <Typography 
-          variant="body2" 
-          sx={{ color: 'text.secondary', mb: { xs: 1.5, md: 3 }, fontSize: { xs: '12px', sm: '14px' } }}
-        >
-          <Typography
-            component={Link}
-            to="/"
-            sx={{
-              color: 'inherit',
-              textDecoration: 'none',
-              cursor: 'pointer',
-              '&:hover': {
-                color: '#000000',
-                textDecoration: 'underline',
-              },
-            }}
-          >
-            Home
-          </Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary', mb: { xs: 1.5, md: 3 }, fontSize: { xs: '12px', sm: '14px' } }}>
+          <Typography component={Link} to="/" sx={{ color: 'inherit', textDecoration: 'none', '&:hover': { color: '#000' } }}>Home</Typography>
           {' > '}
-          <Typography 
-            component="span" 
-            sx={{ color: 'text.primary', fontWeight: 600, fontSize: 'inherit' }}
-          >
-            {currentHeading}
-          </Typography>
+          <Typography component="span" sx={{ color: 'text.primary', fontWeight: 600, fontSize: 'inherit' }}>{currentHeading}</Typography>
         </Typography>
 
         <Box sx={{ display: 'flex', gap: 3 }}>
-          
-          {/* DESKTOP SIDEBAR FILTERS */}
-          <Box
-            sx={{
-              width: '295px',
-              minWidth: '295px',
-              display: { xs: 'none', md: 'block' },
-              border: '1px solid rgba(0,0,0,0.1)',
-              borderRadius: '20px',
-              p: 3,
-              height: 'fit-content',
-            }}
-          >
+          <Box sx={{ width: '295px', minWidth: '295px', display: { xs: 'none', md: 'block' }, border: '1px solid rgba(0,0,0,0.1)', borderRadius: '20px', p: 3, height: 'fit-content' }}>
             {FilterContent}
           </Box>
 
-          {/* MOBILE FILTER DRAWER */}
-          <Drawer
-            anchor="top"
-            open={mobileFilterOpen}
-            onClose={() => setMobileFilterOpen(false)}
-            PaperProps={{
-              sx: { borderBottomLeftRadius: '20px', borderBottomRightRadius: '20px', maxHeight: '85vh', overflowY: 'auto' }
-            }}
-          >
+          <Drawer anchor="top" open={mobileFilterOpen} onClose={() => setMobileFilterOpen(false)} PaperProps={{ sx: { borderBottomLeftRadius: '20px', borderBottomRightRadius: '20px', maxHeight: '85vh', overflowY: 'auto' } }}>
             {FilterContent}
           </Drawer>
 
-          {/* RIGHT SIDE: PRODUCTS LIST */}
           <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
-            
-            {/* Dynamic Header Section */}
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                mb: { xs: 2, md: 3 },
-                width: '100%'
-              }}
-            >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 2, md: 3 }, width: '100%' }}>
               <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                <Typography variant="h4" sx={{ fontWeight: 900, fontSize: { xs: '20px', sm: '28px', md: '32px' } }}>
-                  {currentHeading}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '10px', sm: '12px', md: '14px' }, whiteSpace: 'nowrap' }}>
+                <Typography variant="h4" sx={{ fontWeight: 900, fontSize: { xs: '20px', sm: '28px', md: '32px' } }}>{currentHeading}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '10px', sm: '12px', md: '14px' } }}>
                   Showing {filteredProducts.length > 0 ? `${indexOfFirstProduct + 1}-${Math.min(indexOfLastProduct, filteredProducts.length)}` : '0'} of {filteredProducts.length} Products
                 </Typography>
               </Box>
 
-              {/* Right Aligned Controls */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
                 <FormControl size="small" variant="standard" sx={{ minWidth: 140, display: { xs: 'none', sm: 'inline-flex' } }}>
-                  <Select
-                    value={sortBy}
-                    onChange={handleSortChange}
-                    disableUnderline
-                    sx={{ fontWeight: 700, fontSize: '13px' }}
-                  >
+                  <Select value={sortBy} onChange={handleSortChange} disableUnderline sx={{ fontWeight: 700, fontSize: '13px' }}>
                     <MenuItem value="Most Popular">Sort by: Most Popular</MenuItem>
                     <MenuItem value="Low to High">Sort by: Low to High</MenuItem>
                     <MenuItem value="High to Low">Sort by: High to Low</MenuItem>
                   </Select>
                 </FormControl>
 
-                <IconButton 
-                  onClick={() => setMobileFilterOpen(true)}
-                  sx={{ 
-                    display: { xs: 'flex', md: 'none' }, 
-                    backgroundColor: '#F0F0F0',
-                    width: '36px',
-                    height: '36px',
-                    p: 0.8
-                  }}
-                >
+                <IconButton onClick={() => setMobileFilterOpen(true)} sx={{ display: { xs: 'flex', md: 'none' }, backgroundColor: '#F0F0F0', width: '36px', height: '36px', p: 0.8 }}>
                   <TuneIcon sx={{ fontSize: '18px', color: '#000' }} />
                 </IconButton>
               </Box>
             </Box>
 
-            {/* PRODUCT GRID */}
             {loading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '250px' }}>
                 <CircularProgress sx={{ color: '#000' }} />
@@ -569,51 +454,23 @@ const CategoryPage = () => {
                 <Typography variant="body1" sx={{ fontWeight: 600, mb: 1 }}>
                   No products found matching your selected criteria.
                 </Typography>
-                <Button 
-                  variant="outlined" 
-                  onClick={handleResetFilters}
-                  sx={{ textTransform: 'none', color: '#000', borderColor: '#000', borderRadius: '20px', mt: 1 }}
-                >
+                <Button variant="outlined" onClick={handleResetFilters} sx={{ textTransform: 'none', color: '#000', borderColor: '#000', borderRadius: '20px', mt: 1 }}>
                   Clear All Filters
                 </Button>
               </Box>
             ) : (
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: {
-                    xs: 'repeat(2, 1fr)',
-                    md: 'repeat(3, 1fr)',
-                  },
-                  gap: { xs: 1.2, sm: 2 },
-                  width: '100%',
-                }}
-              >
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: { xs: 1.2, sm: 2 }, width: '100%' }}>
                 {currentProducts.map((product) => {
                   const productId = product._id || product.id;
-                  const rawImg = Array.isArray(product.images) && product.images.length > 0 
-                    ? product.images[0] 
-                    : product.image || product.img;
-
+                  const rawImg = Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : product.image || product.img;
                   const normalizedProduct = {
                     ...product,
                     id: productId,
                     title: product.title || product.name,
                     image: getFullImageUrl(rawImg),
                   };
-
                   return (
-                    <Box 
-                      key={productId} 
-                      onClick={() => navigate(`/product/${productId}`)}
-                      sx={{ 
-                        width: '100%', 
-                        minWidth: 0, 
-                        cursor: 'pointer',
-                        transition: 'transform 0.2s',
-                        '&:hover': { transform: 'translateY(-4px)' }
-                      }}
-                    >
+                    <Box key={productId} onClick={() => navigate(`/product/${productId}`)} sx={{ width: '100%', minWidth: 0, cursor: 'pointer', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
                       <ProductCard product={normalizedProduct} />
                     </Box>
                   );
@@ -623,35 +480,14 @@ const CategoryPage = () => {
 
             <Divider sx={{ my: { xs: 3, md: 4 } }} />
             
-            {/* Dynamic Pagination Controls */}
             {totalPages > 1 && (
               <Box sx={{ display: 'flex', justifyContent: 'center', pb: 2 }}>
-                <Pagination 
-                  count={totalPages}
-                  page={currentPage}
-                  onChange={handlePageChange}
-                  shape="rounded" 
-                  size="small"
-                  sx={{
-                    '& .MuiPaginationItem-root': {
-                      fontSize: { xs: '11px', sm: '13px' },
-                      minWidth: { xs: '24px', sm: '32px' },
-                      height: { xs: '24px', sm: '32px' },
-                      px: { xs: 0.5, sm: 1 }
-                    },
-                    '& .Mui-selected': {
-                      backgroundColor: '#000 !important',
-                      color: '#fff',
-                    }
-                  }}
-                />
+                <Pagination count={totalPages} page={currentPage} onChange={handlePageChange} shape="rounded" size="small" />
               </Box>
             )}
-
           </Box>
         </Box>
       </Box>
-
       <Footer />
     </Box>
   );
