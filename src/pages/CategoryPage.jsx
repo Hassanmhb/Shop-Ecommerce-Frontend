@@ -65,10 +65,9 @@ const COLOR_OPTIONS = [
 
 const SIZE_OPTIONS = ['XX-Small', 'X-Small', 'Small', 'Medium', 'Large', 'X-Large', 'XX-Large', '3X-Large', '4X-Large'];
 
-// ✅ Sirf zaroori categories rakhi hain (New Arrivals, Fashion, Casual vaghera hata diye hain)
-const CATEGORIES = ['T-Shirts', 'Shorts', 'Shirts', 'Hoodie', 'Jeans'];
+// ✅ 'New Arrivals' wapas add kar diya hai taakay database categories se match ho jaye
+const CATEGORIES = ['New Arrivals', 'T-Shirts', 'Shorts', 'Shirts', 'Hoodie', 'Jeans'];
 
-// ✅ Dress Styles bhi minimal kar diye hain agar zaroorat ho
 const DRESS_STYLES = ['Formal', 'Party', 'Gym'];
 
 const CategoryPage = () => {
@@ -143,7 +142,8 @@ const CategoryPage = () => {
         const prodCategory = normalize(item.category);
         const prodName = normalize(item.name || item.title || item.productName || item.description);
         
-        passCategory = prodCategory.includes(searchTerm) || prodName.includes(searchTerm);
+        // Exact ya partial match dono check honge
+        passCategory = prodCategory.includes(searchTerm) || searchTerm.includes(prodCategory) || prodName.includes(searchTerm);
       }
 
       let passColor = !selectedColor;
