@@ -31,7 +31,7 @@ import ProductCard from '../components/common/ProductCard';
 const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const API_BASE_URL = IS_LOCAL 
   ? 'http://localhost:8000' 
-  : 'https://admin-dashboard-seven-beta-63.vercel.app'; 
+  : 'https://shop-ecommerce-backend.vercel.app'; // ✅ Updated to correct backend URL
 
 const API = axios.create({
   baseURL: API_BASE_URL,
@@ -124,9 +124,7 @@ const CategoryPage = () => {
     return String(str).toLowerCase().replace(/[-_\s]/g, '').trim();
   };
 
-  // Jab tak user "Apply Filter" na dabaye, ya agar koi filter select nahi hai, toh saare products dikhne chahiye
   useEffect(() => {
-    // Agar filters khali hain, toh default poori list show ho
     if (!selectedCategory && !selectedColor && !selectedSize && !selectedStyle && priceRange[0] === 0 && priceRange[1] === 1000) {
       setFilteredProducts(products);
     }
