@@ -11,8 +11,6 @@ import {
   ListItemButton,
   ListItemText,
   Divider,
-  Menu,
-  MenuItem,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
@@ -53,17 +51,22 @@ const Navbar = () => {
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
   const handleCartClick = () => navigate('/cart');
 
-  // Profile Icon Click Handler (Smart Redirect)
+  // Profile Icon Click Handler (Smart Redirect for Local & Live Vercel Admin)
   const handleProfileClick = (event) => {
     const currentToken = localStorage.getItem('token');
     const currentUserStr = localStorage.getItem('user');
 
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const adminBaseUrl = isLocal 
+      ? 'http://localhost:5175' 
+      : 'https://admin-dashboard-seven-beta-63.vercel.app';
+
     // Agar token valid hai, tabhi Auth Callback query ke saath redirection karein
     if (currentToken && currentUserStr && currentUserStr !== '{}') {
-      window.location.href = `http://localhost:5175/auth-callback?token=${currentToken}&user=${encodeURIComponent(currentUserStr)}`;
+      window.location.href = `${adminBaseUrl}/auth-callback?token=${currentToken}&user=${encodeURIComponent(currentUserStr)}`;
     } else {
       // Direct Admin Login Route par redirect karein jab user logged in na ho
-      window.location.href = `http://localhost:5175/login`;
+      window.location.href = `${adminBaseUrl}/login`;
     }
   };
 
