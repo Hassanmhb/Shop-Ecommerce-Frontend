@@ -64,6 +64,8 @@ const NewArrivals = () => {
             px: { xs: 0.5, md: 0 },
             justifyContent: { xs: 'flex-start', md: 'center' },
             scrollSnapType: { xs: 'x mandatory', md: 'none' },
+            scrollBehavior: 'smooth',
+            WebkitOverflowScrolling: 'touch',
             '&::-webkit-scrollbar': { display: 'none' },
             msOverflowStyle: 'none',
             scrollbarWidth: 'none',

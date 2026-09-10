@@ -1,131 +1,93 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { Card, CardMedia, CardContent, Typography, Box, Rating } from '@mui/material';
+import { toast } from 'react-toastify';
 
 const ProductCard = ({ product }) => {
-  const navigate = useNavigate();
-  const BACKEND_URL = 'http://localhost:8000';
+  // Product ki initial rating context/backend se le rahe hain, default 0
+  const [ratingValue, setRatingValue] = useState(product?.rating || 4);
 
-  const rawImagePath = Array.isArray(product?.images) && product.images.length > 0
-    ? product.images[0]
-    : product?.image || '';
-
-  const getImageUrl = (path) => {
-    if (!path) return 'https://via.placeholder.com/300?text=No+Image';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    return encodeURI(`${BACKEND_URL}${cleanPath}`);
-  };
-
-  // Card par click handler
-  const handleCardClick = () => {
-    const productId = product?._id || product?.id;
-    if (productId) {
-      navigate(`/product/${productId}`);
+  const handleRatingChange = (event, newValue) => {
+    event.stopPropagation(); // Card click event (navigation) ko rokne ke liye
+    if (newValue !== null) {
+      setRatingValue(newValue);
+      toast.success(`You rated ${newValue} stars for ${product?.title || 'product'}!`, {
+        position: 'bottom-right',
+        autoClose: 2000,
+      });
+      
+      // OPTIONAL: Yahan aap backend / API endpoint par call karke updated rating save kar sakte hain
+      // fetch(`${API_BASE}/api/products/${product.id}/rate`, { method: 'POST', body: JSON.stringify({ rating: newValue }) });
     }
   };
 
   return (
-    <Card 
-      elevation={0} 
-      onClick={handleCardClick}
-      sx={{ 
-        width: '100%', 
-        borderRadius: { xs: '12px', sm: '20px' }, 
-        border: 'none',
-        backgroundColor: 'transparent',
+    <Card
+      sx={{
+        maxWidth: '100%',
+        borderRadius: '20px',
+        boxShadow: 'none',
+        border: '1px solid #F0F0F0',
+        backgroundColor: '#F0F0F0',
         overflow: 'hidden',
-        cursor: 'pointer', // Hover style cursor
-        transition: 'transform 0.2s ease-in-out',
-        '&:hover': {
-          transform: 'translateY(-4px)'
-        }
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      <Box 
-        sx={{ 
-          width: '100%', 
-          height: { xs: '160px', sm: '220px', md: '280px' }, 
-          backgroundColor: '#F0EEED', 
-          borderRadius: { xs: '12px', sm: '20px' },
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          overflow: 'hidden',
-          p: { xs: 1, sm: 2 }
-        }}
-      >
+      <Box sx={{ position: 'relative', pt: '100%', backgroundColor: '#F0F0F0' }}>
         <CardMedia
           component="img"
-          image={getImageUrl(rawImagePath)}
-          alt={product?.name || 'Product Image'}
+          image={product?.image || 'https://placehold.co/300x300?text=No+Image'}
+          alt={product?.title || 'Product'}
           sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
             width: '100%',
             height: '100%',
-            objectFit: 'contain'
-          }}
-          onError={(e) => {
-            e.target.onerror = null; 
-            e.target.src = 'https://via.placeholder.com/300?text=Image+Not+Found';
+            objectFit: 'contain',
+            p: 2,
           }}
         />
       </Box>
 
-      <CardContent sx={{ p: { xs: '8px 0px', sm: '12px 0px' }, '&:last-child': { pb: 0 } }}>
-        <Typography 
-          variant="subtitle1" 
-          sx={{ 
-            fontWeight: 700, 
-            fontSize: { xs: '12px', sm: '15px', md: '16px' }, 
-            lineHeight: 1.2,
-            mb: 0.5 
-          }} 
+      <CardContent sx={{ flexGrow: 1, p: 2 }}>
+        <Typography
+          variant="h6"
           noWrap
+          sx={{
+            fontWeight: 700,
+            fontSize: '16px',
+            mb: 0.5,
+            color: '#000000',
+          }}
         >
-          {product?.name}
+          {product?.title || 'Product Title'}
         </Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, mb: 0.5 }}>
-          <Rating 
-            value={Number(product?.rating) || 0} 
-            precision={0.5} 
-            size="small" 
-            readOnly 
-            sx={{ fontSize: { xs: '12px', sm: '16px' } }}
+        {/* Dynamic Interactive Rating Component */}
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}
+          onClick={(e) => e.stopPropagation()} // Stop navigation on click
+        >
+          <Rating
+            name={`product-rating-${product?.id}`}
+            value={ratingValue}
+            precision={0.5}
+            onChange={handleRatingChange}
+            size="small"
+            sx={{
+              color: '#FFC107',
+            }}
           />
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '10px', sm: '12px' }, fontWeight: 600 }}>
-            {product?.rating || 0}/5
+          <Typography variant="body2" sx={{ fontSize: '12px', color: 'rgba(0,0,0,0.6)', fontWeight: 600 }}>
+            {ratingValue}/5
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, flexWrap: 'wrap' }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: '14px', sm: '18px', md: '20px' } }}>
-            ${product?.price}
-          </Typography>
-
-          {product?.originalPrice && product?.originalPrice > product?.price && (
-            <Typography variant="body2" sx={{ color: 'text.secondary', textDecoration: 'line-through', fontWeight: 600, fontSize: { xs: '11px', sm: '14px' } }}>
-              ${product?.originalPrice}
-            </Typography>
-          )}
-
-          {product?.discountPercent > 0 && (
-            <Box 
-              sx={{ 
-                backgroundColor: 'rgba(255, 51, 51, 0.1)', 
-                color: '#FF3333', 
-                px: { xs: 0.6, sm: 1 }, 
-                py: { xs: 0.1, sm: 0.3 }, 
-                borderRadius: '62px', 
-                fontSize: { xs: '9px', sm: '11px' }, 
-                fontWeight: 700 
-              }}
-            >
-              -{product?.discountPercent}%
-            </Box>
-          )}
-        </Box>
+        <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '18px', color: '#000000' }}>
+          ${product?.price || '0.00'}
+        </Typography>
       </CardContent>
     </Card>
   );

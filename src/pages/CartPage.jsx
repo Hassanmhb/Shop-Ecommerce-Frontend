@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -37,9 +37,9 @@ const CartPage = () => {
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
 
-  // Calculation Logic
+  // Fixed Calculation Logic
   const subtotal = cartItems ? cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0) : 0;
-  let discountAmount = Math.round(subtotal * 0.20);
+  let discountAmount = 0;
 
   if (appliedPromo) {
     if (appliedPromo.type === 'percent') {
@@ -117,7 +117,22 @@ const CartPage = () => {
 
       <Box sx={{ maxWidth: '1240px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 2, md: 3 }, boxSizing: 'border-box' }}>
         <Typography variant="body2" sx={{ color: 'rgba(0, 0, 0, 0.6)', mb: 2, fontSize: '14px' }}>
-          Home &gt;{' '}
+          <Typography
+            component={Link}
+            to="/"
+            sx={{
+              color: 'inherit',
+              textDecoration: 'none',
+              cursor: 'pointer',
+              '&:hover': {
+                textDecoration: 'underline',
+                color: '#000000',
+              },
+            }}
+          >
+            Home
+          </Typography>
+          {' > '}
           <Typography component="span" sx={{ color: '#000000', fontWeight: 500, fontSize: 'inherit' }}>
             Cart
           </Typography>
@@ -143,7 +158,7 @@ const CartPage = () => {
             gap: '20px',
             width: '100%',
             alignItems: 'flex-start',
-            justifyContent: 'space-between',
+            justify: 'space-between',
           }}
         >
           {/* Cart Products List Container */}
@@ -177,7 +192,7 @@ const CartPage = () => {
                           backgroundColor: '#F0EEED',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
+                          justify: 'center',
                           overflow: 'hidden',
                           flexShrink: 0,
                           p: 1,
@@ -260,7 +275,7 @@ const CartPage = () => {
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography sx={{ color: 'rgba(0, 0, 0, 0.6)', fontSize: '16px' }}>
-                Discount {appliedPromo ? `(${appliedPromo.label})` : '(-20%)'}
+                Discount {appliedPromo ? `(${appliedPromo.label})` : ''}
               </Typography>
               <Typography sx={{ fontWeight: 700, color: '#FF3333', fontSize: '16px' }}>-${discountAmount}</Typography>
             </Box>
@@ -317,7 +332,7 @@ const CartPage = () => {
               endIcon={<ArrowForwardIcon />}
               sx={{ backgroundColor: '#000000', borderRadius: '62px', py: 1.8, mt: 1, textTransform: 'none', fontSize: '16px', fontWeight: 500, boxShadow: 'none', '&:hover': { backgroundColor: '#333333' }, '&.Mui-disabled': { backgroundColor: '#CCCCCC' } }}
             >
-              Go to Checkout
+              Enter your details & checkout
             </Button>
           </Box>
         </Box>

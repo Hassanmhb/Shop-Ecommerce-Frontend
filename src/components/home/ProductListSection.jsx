@@ -29,7 +29,6 @@ const ProductListSection = () => {
     );
   }
 
-  // Safe slice: Agar 8 se zyada products hain to 4-8, aksar shuruati products (0-4) show karega
   const topSellingList = products.length >= 8 ? products.slice(4, 8) : products.slice(0, 4);
 
   return (
@@ -63,6 +62,8 @@ const ProductListSection = () => {
             gap: { xs: 2, md: 3 },
             pb: { xs: 1, md: 0 },
             scrollSnapType: { xs: 'x mandatory', md: 'none' },
+            scrollBehavior: 'smooth',
+            WebkitOverflowScrolling: 'touch',
             '&::-webkit-scrollbar': { display: 'none' },
             msOverflowStyle: 'none',
             scrollbarWidth: 'none',

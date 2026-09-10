@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   Box,
   Typography,
@@ -26,6 +28,28 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/common/Footer'; 
 import ProductCard from '../components/common/ProductCard';
 
+// 🟢 Localhost aur Live Vercel Backend auto-switch logic
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_BASE_URL = IS_LOCAL 
+  ? 'http://localhost:8000' 
+  : 'https://admin-dashboard-seven-beta-63.vercel.app'; 
+
+const API = axios.create({
+  baseURL: API_BASE_URL,
+});
+
+// Image URL Helper Function
+const getFullImageUrl = (imgPath) => {
+  if (!imgPath) return 'https://placehold.co/300x300?text=No+Image';
+  let actualPath = typeof imgPath === 'object' ? (imgPath.url || imgPath.secure_url) : imgPath;
+  if (!actualPath || typeof actualPath !== 'string') return 'https://placehold.co/300x300?text=No+Image';
+  if (actualPath.startsWith('http://') || actualPath.startsWith('https://') || actualPath.startsWith('data:image')) {
+    return encodeURI(actualPath);
+  }
+  const cleanPath = actualPath.startsWith('/') ? actualPath : `/${actualPath}`;
+  return encodeURI(`${API_BASE_URL}${cleanPath}`);
+};
+
 const COLOR_OPTIONS = [
   { name: 'Green', hex: '#00C12B' },
   { name: 'Red', hex: '#F52525' },
@@ -40,10 +64,11 @@ const COLOR_OPTIONS = [
 ];
 
 const SIZE_OPTIONS = ['XX-Small', 'X-Small', 'Small', 'Medium', 'Large', 'X-Large', 'XX-Large', '3X-Large', '4X-Large'];
-const CATEGORIES = ['T-shirts', 'Shorts', 'Shirts', 'Hoodie', 'Jeans'];
+const CATEGORIES = ['T-Shirts', 'Shorts', 'Shirts', 'Hoodie', 'Jeans'];
 const DRESS_STYLES = ['Casual', 'Formal', 'Party', 'Gym'];
 
 const CategoryPage = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,22 +89,24 @@ const CategoryPage = () => {
   const itemsPerPage = 6;
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // MongoDB Se Data Fetch Karne Ka Function
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:8000/api/products');
-        if (!response.ok) {
-          throw new Error('Failed to fetch products');
-        }
-        const data = await response.json();
+        const response = await API.get('/api/products');
+        const data = response.data;
+        
         const productList = Array.isArray(data) ? data : data.products || [];
         
-        console.log("Fetched Backend Data:", productList);
         setProducts(productList);
         setFilteredProducts(productList);
       } catch (err) {
         console.error('Error fetching backend products:', err);
-        setError(err.message);
+        setError(err.response?.data?.message || err.message);
       } finally {
         setLoading(false);
       }
@@ -88,47 +115,53 @@ const CategoryPage = () => {
     fetchProducts();
   }, []);
 
-  // Safe Case-Insensitive String Matcher
-  const normalize = (str) => String(str || '').toLowerCase().trim();
+  const normalize = (str) => {
+    if (!str) return '';
+    return String(str)
+      .toLowerCase()
+      .replace(/[-_\s]/g, '') 
+      .trim();
+  };
 
   const handleApplyFilter = () => {
     let result = products.filter((item) => {
-      // 1. Safe Price Check
       const rawPrice = item.price ?? item.cost ?? 0;
       const itemPrice = typeof rawPrice === 'number' ? rawPrice : parseFloat(String(rawPrice).replace(/[^0-9.]/g, ''));
       const passPrice = isNaN(itemPrice) ? true : (itemPrice >= priceRange[0] && itemPrice <= priceRange[1]);
 
-      // 2. Category Check (Matches Category OR Product Name/Title/Description)
       let passCategory = true;
       if (selectedCategory) {
-        const searchTerm = normalize(selectedCategory);
+        let searchTerm = normalize(selectedCategory);
+        if (searchTerm.endsWith('s') && searchTerm.length > 3) {
+          searchTerm = searchTerm.slice(0, -1);
+        }
+
         const prodCategory = normalize(item.category);
         const prodName = normalize(item.name || item.title || item.productName || item.description);
         
         passCategory = prodCategory.includes(searchTerm) || prodName.includes(searchTerm);
       }
 
-      // 3. Color Check
       let passColor = !selectedColor;
       if (selectedColor && item.colors) {
+        const searchColor = normalize(selectedColor);
         if (Array.isArray(item.colors)) {
-          passColor = item.colors.some(c => normalize(c).includes(normalize(selectedColor)));
+          passColor = item.colors.some(c => normalize(c).includes(searchColor));
         } else {
-          passColor = normalize(item.colors).includes(normalize(selectedColor));
+          passColor = normalize(item.colors).includes(searchColor);
         }
       }
 
-      // 4. Size Check
       let passSize = !selectedSize;
       if (selectedSize && item.sizes) {
+        const searchSize = normalize(selectedSize);
         if (Array.isArray(item.sizes)) {
-          passSize = item.sizes.some(s => normalize(s).includes(normalize(selectedSize)));
+          passSize = item.sizes.some(s => normalize(s).includes(searchSize));
         } else {
-          passSize = normalize(item.sizes).includes(normalize(selectedSize));
+          passSize = normalize(item.sizes).includes(searchSize);
         }
       }
 
-      // 5. Dress Style Check (Matches Style OR Product Name/Title/Description)
       let passStyle = true;
       if (selectedStyle) {
         const styleTerm = normalize(selectedStyle);
@@ -141,7 +174,6 @@ const CategoryPage = () => {
       return passPrice && passCategory && passColor && passSize && passStyle;
     });
 
-    // Sorting
     if (sortBy === 'Low to High') {
       result.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
     } else if (sortBy === 'High to Low') {
@@ -177,10 +209,8 @@ const CategoryPage = () => {
     setCurrentPage(1);
   };
 
-  // Dynamic Page Title
   const currentHeading = selectedCategory || selectedStyle || 'All Products';
 
-  // Dynamic Pagination Calculations
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const indexOfLastProduct = currentPage * itemsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
@@ -215,7 +245,7 @@ const CategoryPage = () => {
             onClick={() => setSelectedCategory(selectedCategory === cat ? '' : cat)}
             sx={{
               display: 'flex',
-              justify: 'space-between',
+              justifyContent: 'space-between',
               alignItems: 'center',
               py: 0.8,
               px: 1,
@@ -277,7 +307,7 @@ const CategoryPage = () => {
                     border: colorObj.hex === '#FFFFFF' ? '1px solid #ccc' : 'none',
                     display: 'flex',
                     alignItems: 'center',
-                    justify: 'center',
+                    justifyContent: 'center',
                     cursor: 'pointer',
                     boxShadow: isSelected ? '0 0 0 2px #000' : 'none',
                     lineHeight: 0,
@@ -352,7 +382,7 @@ const CategoryPage = () => {
                 onClick={() => setSelectedStyle(isSelected ? '' : style)}
                 sx={{
                   display: 'flex',
-                  justify: 'space-between',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
                   py: 0.8,
                   px: 1,
@@ -412,9 +442,32 @@ const CategoryPage = () => {
 
       <Box sx={{ maxWidth: '1240px', mx: 'auto', px: { xs: 1.5, sm: 3, md: 4 }, py: { xs: 1.5, md: 3 } }}>
         
-        {/* Dynamic Breadcrumb Navigation */}
-        <Typography variant="body2" sx={{ color: 'text.secondary', mb: { xs: 1.5, md: 3 }, fontSize: { xs: '12px', sm: '14px' } }}>
-          Home &gt; <Typography component="span" sx={{ color: 'text.primary', fontWeight: 600, fontSize: 'inherit' }}>{currentHeading}</Typography>
+        <Typography 
+          variant="body2" 
+          sx={{ color: 'text.secondary', mb: { xs: 1.5, md: 3 }, fontSize: { xs: '12px', sm: '14px' } }}
+        >
+          <Typography
+            component={Link}
+            to="/"
+            sx={{
+              color: 'inherit',
+              textDecoration: 'none',
+              cursor: 'pointer',
+              '&:hover': {
+                color: '#000000',
+                textDecoration: 'underline',
+              },
+            }}
+          >
+            Home
+          </Typography>
+          {' > '}
+          <Typography 
+            component="span" 
+            sx={{ color: 'text.primary', fontWeight: 600, fontSize: 'inherit' }}
+          >
+            {currentHeading}
+          </Typography>
         </Typography>
 
         <Box sx={{ display: 'flex', gap: 3 }}>
@@ -436,11 +489,11 @@ const CategoryPage = () => {
 
           {/* MOBILE FILTER DRAWER */}
           <Drawer
-            anchor="bottom"
+            anchor="top"
             open={mobileFilterOpen}
             onClose={() => setMobileFilterOpen(false)}
             PaperProps={{
-              sx: { borderTopLeftRadius: '20px', borderTopRightRadius: '20px', maxHeight: '85vh' }
+              sx: { borderBottomLeftRadius: '20px', borderBottomRightRadius: '20px', maxHeight: '85vh', overflowY: 'auto' }
             }}
           >
             {FilterContent}
@@ -453,7 +506,7 @@ const CategoryPage = () => {
             <Box 
               sx={{ 
                 display: 'flex', 
-                justify: 'space-between', 
+                justifyContent: 'space-between', 
                 alignItems: 'center', 
                 mb: { xs: 2, md: 3 },
                 width: '100%'
@@ -532,11 +585,35 @@ const CategoryPage = () => {
                   width: '100%',
                 }}
               >
-                {currentProducts.map((product) => (
-                  <Box key={product._id || product.id} sx={{ width: '100%', minWidth: 0 }}>
-                    <ProductCard product={product} />
-                  </Box>
-                ))}
+                {currentProducts.map((product) => {
+                  const productId = product._id || product.id;
+                  const rawImg = Array.isArray(product.images) && product.images.length > 0 
+                    ? product.images[0] 
+                    : product.image || product.img;
+
+                  const normalizedProduct = {
+                    ...product,
+                    id: productId,
+                    title: product.title || product.name,
+                    image: getFullImageUrl(rawImg),
+                  };
+
+                  return (
+                    <Box 
+                      key={productId} 
+                      onClick={() => navigate(`/product/${productId}`)}
+                      sx={{ 
+                        width: '100%', 
+                        minWidth: 0, 
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s',
+                        '&:hover': { transform: 'translateY(-4px)' }
+                      }}
+                    >
+                      <ProductCard product={normalizedProduct} />
+                    </Box>
+                  );
+                })}
               </Box>
             )}
 

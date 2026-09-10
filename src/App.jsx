@@ -23,6 +23,8 @@ function App() {
         <Route path="/category" element={<CategoryPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        
+        {/* Login & Register routes completely cleaned */}
       </Routes>
     </div>
   );

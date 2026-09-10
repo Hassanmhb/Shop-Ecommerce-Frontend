@@ -66,7 +66,7 @@ const HappyCustomers = () => {
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'space-between',
+            justify: 'space-between',
             alignItems: 'center',
             mb: { xs: 3, md: 5 },
           }}
@@ -114,6 +114,8 @@ const HappyCustomers = () => {
             gap: { xs: 2, md: 3 },
             overflowX: 'auto',
             scrollSnapType: 'x mandatory',
+            scrollBehavior: 'smooth',
+            WebkitOverflowScrolling: 'touch',
             py: 1,
             '&::-webkit-scrollbar': { display: 'none' },
             msOverflowStyle: 'none',
@@ -136,7 +138,7 @@ const HappyCustomers = () => {
                 p: { xs: 2.5, md: 3.5 },
                 display: 'flex',
                 flexDirection: 'column',
-                justify: 'flex-start',
+                justifyContent: 'flex-start',
                 boxSizing: 'border-box',
               }}
             >
