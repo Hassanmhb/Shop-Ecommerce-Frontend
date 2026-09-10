@@ -64,9 +64,12 @@ const COLOR_OPTIONS = [
 ];
 
 const SIZE_OPTIONS = ['XX-Small', 'X-Small', 'Small', 'Medium', 'Large', 'X-Large', 'XX-Large', '3X-Large', '4X-Large'];
-// Database ke categories ke mutabiq update kiya gaya hai
-const CATEGORIES = ['New Arrivals', 'T-Shirts', 'Shorts', 'Shirts', 'Hoodie', 'Jeans'];
-const DRESS_STYLES = ['Casual', 'Formal', 'Party', 'Gym'];
+
+// ✅ Sirf zaroori categories rakhi hain (New Arrivals, Fashion, Casual vaghera hata diye hain)
+const CATEGORIES = ['T-Shirts', 'Shorts', 'Shirts', 'Hoodie', 'Jeans'];
+
+// ✅ Dress Styles bhi minimal kar diye hain agar zaroorat ho
+const DRESS_STYLES = ['Formal', 'Party', 'Gym'];
 
 const CategoryPage = () => {
   const navigate = useNavigate();
@@ -104,7 +107,7 @@ const CategoryPage = () => {
         const productList = Array.isArray(data) ? data : data.products || [];
         
         setProducts(productList);
-        setFilteredProducts(productList); // 🔥 Direct set kar diya taakay pehli bar mein products nazar ayein
+        setFilteredProducts(productList); 
       } catch (err) {
         console.error('Error fetching backend products:', err);
         setError(err.response?.data?.message || err.message);
